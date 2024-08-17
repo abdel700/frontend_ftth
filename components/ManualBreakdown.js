@@ -26,7 +26,7 @@ const ManualBreakdown = ({ startDate, endDate }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('http://localhost:8000/dashboard/api/regle/');
+        const response = await fetch('https://tranquil-shelf-72645-6e0212cb96fc.herokuapp.com/dashboard/api/regle/');
         const data = await response.json();
 
         // Filtrer les données en fonction des dates si le filtre est appliqué

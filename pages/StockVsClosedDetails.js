@@ -7,6 +7,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
+// Remplacez l'URL localhost par l'URL de votre backend sur Heroku
 const StockVsClosedDetails = () => {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
@@ -45,7 +46,8 @@ const StockVsClosedDetails = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('http://localhost:8000/dashboard/api/regle/');
+        // Remplacez l'URL localhost par l'URL de votre backend sur Heroku
+        const response = await fetch('https://tranquil-shelf-72645-6e0212cb96fc.herokuapp.com/dashboard/api/regle/');
         const data = await response.json();
 
         let filteredData = data;
