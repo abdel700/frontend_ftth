@@ -132,22 +132,43 @@ export default function Dashboard() {
                 )}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 w-full">
-                <StatCard title="Backlog FTTH J" value={backlogToday} description={backlogDifferenceText} />
-                <StatCard title="Objectif" value={objectifValue} description={`${objectivePercentage.toFixed(1)}% de commandes non traitées`} isObjective={true} />
-                <StatCard title="Backlog FTTH J-1" value={backlogJ1Today} description={backlogJ1DifferenceText} />
-                <StatCard title="Dossiers Traités" value={dossiersTraitesToday} description="Aujourd'hui" />
+                <StatCard
+                  title="Backlog FTTH J"
+                  value={backlogToday}
+                  description={backlogDifferenceText}
+                  className="hover:shadow-lg transition-shadow duration-300 ease-in-out"
+                />
+                <StatCard
+                  title="Objectif"
+                  value={objectifValue}
+                  description={`${objectivePercentage.toFixed(1)}% de commandes non traitées`}
+                  isObjective={true}
+                  className="hover:shadow-lg transition-shadow duration-300 ease-in-out"
+                />
+                <StatCard
+                  title="Backlog FTTH J-1"
+                  value={backlogJ1Today}
+                  description={backlogJ1DifferenceText}
+                  className="hover:shadow-lg transition-shadow duration-300 ease-in-out"
+                />
+                <StatCard
+                  title="Dossiers Traités"
+                  value={dossiersTraitesToday}
+                  description="Aujourd'hui"
+                  className="hover:shadow-lg transition-shadow duration-300 ease-in-out"
+                />
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
-                <div onClick={handleCardClick} className="cursor-pointer lg:col-span-2 transform hover:scale-105 transition-transform duration-200 ease-in-out">
+                <div onClick={handleCardClick} className="cursor-pointer lg:col-span-2 hover:shadow-lg transition-shadow duration-300 ease-in-out">
                   <CombinedOverview startDate={startDate} endDate={endDate} />
                 </div>
-                <div onClick={handleTopRulesFTTHClick} className="cursor-pointer lg:col-span-1 transform hover:scale-105 transition-transform duration-200 ease-in-out">
+                <div onClick={handleTopRulesFTTHClick} className="cursor-pointer lg:col-span-1 hover:shadow-lg transition-shadow duration-300 ease-in-out">
                   <TopRulesFTTH startDate={startDate} endDate={endDate} />
                 </div>
-                <div onClick={handleTopRulesITSClick} className="cursor-pointer lg:col-span-1 transform hover:scale-105 transition-transform duration-200 ease-in-out">
+                <div onClick={handleTopRulesITSClick} className="cursor-pointer lg:col-span-1 hover:shadow-lg transition-shadow duration-300 ease-in-out">
                   <TopRulesITS />
                 </div>
-                <div onClick={handleStockVsSortantsClick} className="cursor-pointer lg:col-span-2 transform hover:scale-105 transition-transform duration-200 ease-in-out">
+                <div onClick={handleStockVsSortantsClick} className="cursor-pointer lg:col-span-2 hover:shadow-lg transition-shadow duration-300 ease-in-out">
                   <StockVsSortantsApercu startDate={startDate} endDate={endDate} />
                 </div>
                 <div className="lg:col-span-2 mb-8">
