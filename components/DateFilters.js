@@ -1,19 +1,68 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 
 const DateFilters = ({ setStartDate, setEndDate, closeFilter }) => {
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
   const [error, setError] = useState('');
+  const endDateRef = useRef(null);
 
   const handleApply = () => {
+    const today = new Date().toISOString().split('T')[0]; // Date du jour au format YYYY-MM-DD
+
+    // Vérification si les champs sont remplis
     if (!start || !end) {
       setError('Veuillez remplir les deux champs de date.');
-    } else {
-      setStartDate(start);
-      setEndDate(end);
-      setError('');
-      closeFilter();
+      return;
     }
+
+    // Vérification si la date de fin dépasse la date du jour
+    if (end > today) {
+      setError('La date de fin ne peut pas dépasser la date du jour.');
+      return;
+    }
+
+    // Vérification si la date de début est postérieure à la date de fin
+    if (start > end) {
+      setError('La date de début ne peut pas être postérieure à la date de fin.');
+      return;
+    }
+
+    // Si tout est bon, appliquer les filtres
+    setStartDate(start);
+    setEndDate(end);
+    setError('');
+    closeFilter();
+  };
+
+  const handleStartDateInput = (e) => {
+    let value = e.target.value;
+
+    // Limite l'année à 4 chiffres
+    const parts = value.split('-');
+    if (parts[0].length > 4) {
+      parts[0] = parts[0].slice(0, 4);
+    }
+
+    value = parts.join('-');
+    setStart(value);
+
+    // Passe au champ de la date de fin si la date est complète
+    if (value.length === 10) {
+      endDateRef.current.focus();
+    }
+  };
+
+  const handleEndDateInput = (e) => {
+    let value = e.target.value;
+
+    // Limite l'année à 4 chiffres
+    const parts = value.split('-');
+    if (parts[0].length > 4) {
+      parts[0] = parts[0].slice(0, 4);
+    }
+
+    value = parts.join('-');
+    setEnd(value);
   };
 
   const handleKeyDown = (event) => {
@@ -29,7 +78,7 @@ const DateFilters = ({ setStartDate, setEndDate, closeFilter }) => {
         <input
           type="date"
           value={start}
-          onChange={(e) => setStart(e.target.value)}
+          onInput={handleStartDateInput}  // Utilisation de onInput pour valider en temps réel
           onKeyDown={handleKeyDown}
           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm"
         />
@@ -39,7 +88,8 @@ const DateFilters = ({ setStartDate, setEndDate, closeFilter }) => {
         <input
           type="date"
           value={end}
-          onChange={(e) => setEnd(e.target.value)}
+          ref={endDateRef}
+          onInput={handleEndDateInput}  // Utilisation de onInput pour valider en temps réel
           onKeyDown={handleKeyDown}
           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm"
         />

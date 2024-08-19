@@ -14,17 +14,20 @@ const TopReglesDetails = () => {
   const [showDateFilter, setShowDateFilter] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [data, setData] = useState([]);
-  const today = new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+  const [loading, setLoading] = useState(true);
+  const today = new Date().toLocaleString('fr-FR', { dateStyle: 'short'});
   const graphRefs = useRef([]);
 
   useEffect(() => {
     const loadData = async () => {
+      setLoading(true);
       try {
         const regleData = await fetchRegleData();
-        console.log('Données de règles par jour :', regleData);
         setData(regleData);
       } catch (error) {
         console.error('Erreur lors de la récupération des données :', error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -100,7 +103,7 @@ const TopReglesDetails = () => {
         doc.text(`De : ${startDate} à : ${endDate}`, margin, 30);
       }
 
-      let yOffset = 40; 
+      let yOffset = 40;
 
       topRules.forEach((rule, index) => {
         const graphCanvas = graphRefs.current[index]?.querySelector('canvas');
@@ -123,7 +126,6 @@ const TopReglesDetails = () => {
         }
       });
 
-      // Add table after the graphs
       const tableData = filteredData.map(row => [row.date, row.regle, row.nbr_stoc_du_jour]);
       doc.autoTable({
         head: [['Date', 'Règle', 'Stock']],
@@ -165,115 +167,125 @@ const TopReglesDetails = () => {
       )}
       <main className="container mx-auto p-6 pt-16 flex-grow transition-all duration-300 ease-in-out">
         <div className="flex flex-col items-center">
-          <h1 className="text-4xl font-bold mb-6 text-center text-blue-600">Détails du Top 5 Règles</h1>
-          <div className="mb-6 flex justify-between items-center w-full max-w-6xl mx-auto">
-            <span className="text-lg font-medium">{startDate && endDate ? `De : ${startDate} À : ${endDate}` : `Date du jour : ${today}`}</span>
-            {startDate && endDate && (
-              <span className="text-lg font-medium">Durée : {Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24))} jours</span>
-            )}
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full max-w-6xl mx-auto">
-            {topRules.map((rule, index) => {
-              const ruleData = calculateRuleDataForDateRange(rule, filteredData);
-              return (
-                <div key={rule} className="mb-6">
-                  <h2 className="text-2xl font-semibold mb-4 text-center">Détails de la règle {rule}</h2>
-                  <div ref={(el) => (graphRefs.current[index] = el)}>
-                    <TopRuleGraph rule={rule} filteredData={Object.entries(ruleData).map(([date, value]) => ({ date, value }))} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <div className="w-full max-w-6xl mx-auto mt-6">
-            <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
-              <thead>
-                <tr>
-                  <th className="py-2 px-4 bg-blue-500 text-white">ID</th>
-                  <th className="py-2 px-4 bg-blue-500 text-white">Date</th>
-                  <th className="py-2 px-4 bg-blue-500 text-white">Règle</th>
-                  <th className="py-2 px-4 bg-blue-500 text-white">Stock</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredData.map((row, index) => (
-                  <tr key={index} className="border-t">
-                    <td className="py-2 px-4">{index + 1}</td>
-                    <td className="py-2 px-4">{row.date}</td>
-                    <td className="py-2 px-4">{row.regle}</td>
-                    <td className="py-2 px-4">{row.nbr_stoc_du_jour}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="flex justify-end mt-4 space-x-4">
-              <div className="relative inline-block text-left">
-                <div>
-                  <button
-                    type="button"
-                    className="inline-flex justify-center w-full px-4 py-2 bg-blue-600 text-sm font-medium text-white rounded-md hover:bg-blue-700 focus:outline-none"
-                    id="options-menu"
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  >
-                    Télécharger
-                    <svg
-                      className="-mr-1 ml-2 h-5 w-5"
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                      aria-hidden="true"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 111.414 1.414l-4 4a1 1 01-1.414 0l-4-4a1 1 010-1.414z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </button>
-                </div>
-                {isDropdownOpen && (
-                  <div
-                    className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
-                  >
-                    <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-                      <a
-                        href="#"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => handleDownload('csv')}
-                      >
-                        CSV
-                      </a>
-                      <a
-                        href="#"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => handleDownload('xlsx')}
-                      >
-                        XLSX
-                      </a>
-                      <a
-                        href="#"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => handleDownload('pdf')}
-                      >
-                        PDF
-                      </a>
-                    </div>
-                  </div>
+          <h1 className="text-4xl font-bold mt-6 mb-6 text-center text-blue-600">Détails du Top 5 Règles</h1>
+          {loading ? (
+            <div className="spinner-container">
+              <div className="spinner">
+                <div className="spinner-text">ITS</div>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="mb-6 flex flex-col md:flex-row justify-between items-center w-full max-w-6xl mx-auto">
+                <span className="text-lg font-medium">{startDate && endDate ? `De : ${startDate} À : ${endDate}` : `Date du jour : ${today}`}</span>
+                {startDate && endDate && (
+                  <span className="text-lg font-medium mt-4 md:mt-0">Durée : {Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24))} jours</span>
                 )}
               </div>
-              <button
-                className="px-4 py-2 bg-gray-600 text-sm font-medium text-white rounded-md hover:bg-gray-700"
-                onClick={() => window.location.href = '/dashboard'}
-              >
-                Retour au Dashboard
-              </button>
-            </div>
-          </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full max-w-6xl mx-auto">
+                {topRules.map((rule, index) => {
+                  const ruleData = calculateRuleDataForDateRange(rule, filteredData);
+                  return (
+                    <div key={rule} className="mb-6">
+                      <h2 className="text-2xl font-semibold mb-4 text-center">Détails de la règle {rule}</h2>
+                      <div ref={(el) => (graphRefs.current[index] = el)}>
+                        <TopRuleGraph rule={rule} filteredData={Object.entries(ruleData).map(([date, value]) => ({ date, value }))} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="w-full max-w-6xl mx-auto mt-6 overflow-x-auto">
+                <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+                  <thead>
+                    <tr>
+                      <th className="py-2 px-4 bg-blue-500 text-white">#</th>
+                      <th className="py-2 px-4 bg-blue-500 text-white">Date</th>
+                      <th className="py-2 px-4 bg-blue-500 text-white">Règle</th>
+                      <th className="py-2 px-4 bg-blue-500 text-white">Stock</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredData.map((row, index) => (
+                      <tr key={index} className="border-t">
+                        <td className="py-2 px-4">{index + 1}</td>
+                        <td className="py-2 px-4">{row.date}</td>
+                        <td className="py-2 px-4">{row.regle}</td>
+                        <td className="py-2 px-4">{row.nbr_stoc_du_jour}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex flex-col md:flex-row justify-end mt-4 space-x-0 md:space-x-4 w-full max-w-6xl mx-auto">
+                <div className="relative inline-block text-left mb-4 md:mb-0">
+                  <div>
+                    <button
+                      type="button"
+                      className="inline-flex justify-center w-full px-4 py-2 bg-blue-600 text-sm font-medium text-white rounded-md hover:bg-blue-700 focus:outline-none"
+                      id="options-menu"
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    >
+                      Télécharger
+                      <svg
+                        className="-mr-1 ml-2 h-5 w-5"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 111.414 1.414l-4 4a1 1 01-1.414 0l-4-4a1 1 010-1.414z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                  {isDropdownOpen && (
+                    <div
+                      className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
+                    >
+                      <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+                        <a
+                          href="#"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => handleDownload('csv')}
+                        >
+                          CSV
+                        </a>
+                        <a
+                          href="#"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => handleDownload('xlsx')}
+                        >
+                          XLSX
+                        </a>
+                        <a
+                          href="#"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => handleDownload('pdf')}
+                        >
+                          PDF
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <button
+                  className="px-4 py-2 bg-gray-600 text-sm font-medium text-white rounded-md hover:bg-gray-700"
+                  onClick={() => window.location.href = '/dashboard'}
+                >
+                  Retour au Dashboard
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </main>
       <Footer />
     </div>
-  );
+  );  
 };
 
 export default TopReglesDetails;

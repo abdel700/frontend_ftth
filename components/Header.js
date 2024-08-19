@@ -1,4 +1,3 @@
-// components/Header.js
 import React, { useState, useEffect, useRef } from 'react';
 import { FaBars, FaSearch, FaBell, FaFilter } from 'react-icons/fa';
 import Link from 'next/link';
@@ -8,9 +7,8 @@ const Header = ({ toggleDateFilter, setMenuOpen }) => {
   const menuRef = useRef(null);
 
   const toggleMenu = () => {
-    const newMenuState = !isMenuOpen;
-    setIsMenuOpen(newMenuState);
-    setMenuOpen(newMenuState);
+    setIsMenuOpen(!isMenuOpen);
+    setMenuOpen(!isMenuOpen);
   };
 
   const handleClickOutside = (event) => {
@@ -37,8 +35,8 @@ const Header = ({ toggleDateFilter, setMenuOpen }) => {
       <header className="bg-blue-600 text-white p-4 flex justify-between items-center fixed top-0 left-0 right-0 z-50 shadow-md">
         <div className="flex items-center">
           <FaBars className="mr-4 cursor-pointer" onClick={toggleMenu} />
-          <Link href="/dashboard" className="text-xl font-bold text-white">
-            FTTH DASHBOARD
+          <Link href="/dashboard">
+            <span className="text-xl font-bold text-white cursor-pointer">FTTH DASHBOARD</span>
           </Link>
         </div>
         <div className="flex items-center">

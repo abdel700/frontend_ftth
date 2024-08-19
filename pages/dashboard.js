@@ -11,6 +11,7 @@ import StatCard from '../components/StatCard';
 import TopRulesITS from '../components/TopRules';
 import { formatDate } from '../utils/formatDate';
 import { fetchStockData, fetchRegleDataAlternative } from '../services/api';
+import { Spinner } from '../components/Spinner';
 
 export default function Dashboard() {
   const [showDateFilter, setShowDateFilter] = useState(false);
@@ -19,11 +20,13 @@ export default function Dashboard() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [stockData, setStockData] = useState([]);
   const [regleData, setRegleData] = useState([]);
+  const [loading, setLoading] = useState(true);
   const dateFilterRef = useRef();
   const router = useRouter();
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
         const stockResult = await fetchStockData();
         setStockData(stockResult);
@@ -32,6 +35,8 @@ export default function Dashboard() {
         setRegleData(regleResult);
       } catch (error) {
         console.error('Erreur lors de la récupération des données:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -109,40 +114,48 @@ export default function Dashboard() {
           <DateFilters setStartDate={setStartDate} setEndDate={setEndDate} closeFilter={() => setShowDateFilter(false)} />
         </div>
       )}
-      <main className={`flex-grow flex flex-col justify-center transition-all duration-300 ease-in-out ${isMenuOpen ? 'ml-64 md:ml-64' : 'ml-0'}`}>
-        <div className="w-full max-w-full px-4 lg:px-8">
-          <div className="flex flex-col items-center">
-            <h1 className="text-4xl font-bold mt-6 mb-6 text-center text-blue-600">Dashboard FTTH</h1>
-            <div className="mb-6 flex justify-between items-center w-full">
-              <span className="text-lg font-medium">{startDate && endDate ? `De : ${startDate} À : ${endDate}` : `Date du jour : ${today}`}</span>
-              {startDate && endDate && (
-                <span className="text-lg font-medium">{duration}</span>
-              )}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 w-full">
-              <StatCard title="Backlog FTTH J" value={backlogToday} description={backlogDifferenceText} />
-              <StatCard title="Objectif" value={objectifValue} description={`${objectivePercentage.toFixed(1)}% de commandes non traitées`} isObjective={true} />
-              <StatCard title="Backlog FTTH J-1" value={backlogJ1Today} description={backlogJ1DifferenceText} />
-              <StatCard title="Dossiers Traités" value={dossiersTraitesToday} description="Aujourd'hui" />
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
-              <div onClick={handleCardClick} className="cursor-pointer lg:col-span-2">
-                <CombinedOverview startDate={startDate} endDate={endDate} />
+      <main className="container mx-auto p-6 pt-16 flex-grow transition-all duration-300 ease-in-out">
+        <div className="flex flex-col items-center">
+          <h1 className="text-4xl font-bold mt-6 mb-6 text-center text-blue-600">Dashboard FTTH</h1>
+          {loading ? (
+            <Spinner />
+          ) : (
+            <>
+              <div className="mb-6 flex flex-col md:flex-row justify-between items-center w-full max-w-6xl mx-auto">
+                <span className="text-lg font-medium">
+                  {startDate && endDate ? `De : ${startDate} À : ${endDate}` : `Date du jour : ${today}`}
+                </span>
+                {startDate && endDate && (
+                  <span className="text-lg font-medium mt-4 md:mt-0">
+                    {duration}
+                  </span>
+                )}
               </div>
-              <div onClick={handleTopRulesFTTHClick} className="cursor-pointer lg:col-span-1">
-                <TopRulesFTTH startDate={startDate} endDate={endDate} />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 w-full">
+                <StatCard title="Backlog FTTH J" value={backlogToday} description={backlogDifferenceText} />
+                <StatCard title="Objectif" value={objectifValue} description={`${objectivePercentage.toFixed(1)}% de commandes non traitées`} isObjective={true} />
+                <StatCard title="Backlog FTTH J-1" value={backlogJ1Today} description={backlogJ1DifferenceText} />
+                <StatCard title="Dossiers Traités" value={dossiersTraitesToday} description="Aujourd'hui" />
               </div>
-              <div onClick={handleTopRulesITSClick} className="cursor-pointer lg:col-span-1">
-                <TopRulesITS />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
+                <div onClick={handleCardClick} className="cursor-pointer lg:col-span-2 transform hover:scale-105 transition-transform duration-200 ease-in-out">
+                  <CombinedOverview startDate={startDate} endDate={endDate} />
+                </div>
+                <div onClick={handleTopRulesFTTHClick} className="cursor-pointer lg:col-span-1 transform hover:scale-105 transition-transform duration-200 ease-in-out">
+                  <TopRulesFTTH startDate={startDate} endDate={endDate} />
+                </div>
+                <div onClick={handleTopRulesITSClick} className="cursor-pointer lg:col-span-1 transform hover:scale-105 transition-transform duration-200 ease-in-out">
+                  <TopRulesITS />
+                </div>
+                <div onClick={handleStockVsSortantsClick} className="cursor-pointer lg:col-span-2 transform hover:scale-105 transition-transform duration-200 ease-in-out">
+                  <StockVsSortantsApercu startDate={startDate} endDate={endDate} />
+                </div>
+                <div className="lg:col-span-2 mb-8">
+                  <ManualBreakdown startDate={startDate} endDate={endDate} />
+                </div>
               </div>
-              <div onClick={handleStockVsSortantsClick} className="cursor-pointer lg:col-span-2">
-                <StockVsSortantsApercu startDate={startDate} endDate={endDate} />
-              </div>
-              <div className="lg:col-span-2 mb-8">
-                <ManualBreakdown startDate={startDate} endDate={endDate} />
-              </div>
-            </div>
-          </div>
+            </>
+          )}
         </div>
       </main>
       <Footer />

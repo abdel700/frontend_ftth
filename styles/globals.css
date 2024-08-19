@@ -37,3 +37,50 @@ h1, h2 {
     opacity: 1;
   }
 }
+/* CSS pour le spinner */
+.spinner-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin-bottom: 100px; /* Ajustez cette valeur pour modifier la hauteur */
+}
+
+
+/* CSS for the spinner */
+.spinner-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.spinner {
+  width: 100px;
+  height: 100px;
+  border: 10px solid #f3f3f3;
+  border-top: 10px solid #3c63ed;
+  border-radius: 50%;
+  animation: spin 2s linear infinite;
+  position: relative;
+}
+
+.spinner-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 20px;
+  font-weight: bold;
+  color: #3c63ed;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
