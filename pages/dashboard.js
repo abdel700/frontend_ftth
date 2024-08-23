@@ -392,7 +392,7 @@ export default function Dashboard() {
           }
         }
   
-        yOffset += iAmgHeight + 10;
+        yOffset += imgHeight + 10;
       }
     };
   
@@ -406,6 +406,7 @@ export default function Dashboard() {
     // Save PDF
     doc.save(`dashboard_report_${today}.pdf`);
   };
+
 
   
   
