@@ -7,6 +7,7 @@ import { fetchRegleData } from '../services/api';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import html2canvas from 'html2canvas';
 
 const TopReglesDetails = () => {
   const [startDate, setStartDate] = useState(null);
@@ -15,7 +16,7 @@ const TopReglesDetails = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const today = new Date().toLocaleString('fr-FR', { dateStyle: 'short'});
+  const today = new Date().toLocaleString('fr-FR', { dateStyle: 'short' });
   const graphRefs = useRef([]);
 
   useEffect(() => {
@@ -78,88 +79,96 @@ const TopReglesDetails = () => {
     return ruleData;
   };
 
-  const handleDownload = async (format) => {
-    setIsDropdownOpen(false);
-    const dateRange = startDate && endDate ? `_${startDate}_to_${endDate}` : '';
+  const handleDownloadPDF = async () => {
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 15;
+    const contentWidth = pageWidth - margin * 2;
+    let yOffset = margin;
 
-    if (format === 'pdf') {
-      const doc = new jsPDF('p', 'mm', 'a4');
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const margin = 15;
+    // Ajouter la date de génération du rapport
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Généré le : ${today}`, pageWidth - margin, yOffset, { align: 'right' });
+    yOffset += 10;
 
-      doc.setFontSize(10);
-      doc.text(`Effectué le : ${today}`, pageWidth - margin, 10, { align: 'right' });
+// Add Report Title and Date Range Information
+doc.setFontSize(22);
+doc.setTextColor(0, 0, 128);
+doc.setFont('helvetica', 'bold');
+doc.text('Détails du Top 5 Règles', pageWidth / 2, yOffset, { align: 'center' });
+yOffset += 15;
 
-      doc.setFontSize(24);
-      doc.setTextColor(0, 0, 255);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Détails du Top 5 Règles', pageWidth / 2, 20, { align: 'center' });
+if (startDate && endDate) {
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'normal');
+    const duration = `(${Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24))} jours)`;
+    doc.text(`Période: ${startDate} à ${endDate} ${duration}`, pageWidth / 2, yOffset, { align: 'center' });
+    yOffset += 10;
+}
 
-      if (startDate && endDate) {
-        doc.setFontSize(12);
-        doc.setTextColor(0, 0, 0);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`De : ${startDate} à : ${endDate}`, margin, 30);
-      }
 
-      let yOffset = 40;
+    // Ajouter une ligne séparatrice horizontale
+    doc.setDrawColor(200);
+    doc.line(margin, yOffset, pageWidth - margin, yOffset);
+    yOffset += 10;
 
-      topRules.forEach((rule, index) => {
-        const graphCanvas = graphRefs.current[index]?.querySelector('canvas');
-        if (graphCanvas) {
-          const imgData = graphCanvas.toDataURL('image/png');
+    // Ajouter les graphes des règles
+    for (let index = 0; index < topRules.length; index++) {
+      const rule = topRules[index];
+      const graphCanvas = graphRefs.current[index]?.querySelector('canvas');
 
-          if (yOffset + 70 > pageHeight - margin) {
-            doc.addPage();
-            yOffset = margin;
-          }
+      if (graphCanvas) {
+        const canvas = await html2canvas(graphCanvas, {
+          backgroundColor: null,
+          scale: 2,
+        });
+        const imgData = canvas.toDataURL('image/png');
+        const imgHeight = (canvas.height * contentWidth) / canvas.width;
 
-          doc.setFontSize(16);
-          doc.setTextColor(0, 0, 0);
-          doc.text(`Règle ${rule}`, pageWidth / 2, yOffset, { align: 'center' });
-
-          yOffset += 10;
-
-          doc.addImage(imgData, 'PNG', margin, yOffset, pageWidth - 2 * margin, 60);
-          yOffset += 70;
+        // Vérifier si l'image rentre sur la page actuelle, sinon ajouter une nouvelle page
+        if (yOffset + imgHeight > pageHeight - margin) {
+          doc.addPage();
+          yOffset = margin;
         }
-      });
 
-      const tableData = filteredData.map(row => [row.date, row.regle, row.nbr_stoc_du_jour]);
-      doc.autoTable({
-        head: [['Date', 'Règle', 'Stock']],
-        body: tableData,
-        startY: yOffset + 10,
-        theme: 'grid',
-      });
+        doc.setFontSize(16);
+        doc.setTextColor(0, 0, 128);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Détails de la règle ${rule}`, margin, yOffset); // Aligner à gauche
+        yOffset += 10;
 
-      const fileName = `top-regles-details${dateRange}.pdf`;
-      doc.save(fileName);
-    } else if (format === 'csv') {
-      const csvContent = [
-        ['Date', 'Règle', 'Stock'],
-        ...filteredData.map(row => [row.date, row.regle, row.nbr_stoc_du_jour])
-      ].map(e => e.join(",")).join("\n");
-
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `top-regles-details${dateRange}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } else if (format === 'xlsx') {
-      const worksheet = XLSX.utils.json_to_sheet(filteredData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'TopRegles');
-      XLSX.writeFile(workbook, `top-regles-details${dateRange}.xlsx`);
+        doc.addImage(imgData, 'PNG', margin, yOffset, contentWidth, imgHeight);
+        yOffset += imgHeight + 10;
+      }
     }
+
+    // Ajouter une ligne séparatrice horizontale avant le tableau
+    doc.setDrawColor(200);
+    doc.line(margin, yOffset, pageWidth - margin, yOffset);
+    yOffset += 10;
+
+    // Ajouter les données du tableau
+    const tableData = filteredData.map(row => [row.date, row.regle, row.nbr_stoc_du_jour]);
+    doc.autoTable({
+      head: [['Date', 'Règle', 'Stock']],
+      body: tableData,
+      startY: yOffset + 10,
+      theme: 'grid',
+    });
+
+    const fileName = `top-regles-details_${today}.pdf`;
+    doc.save(fileName);
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
-      <Header toggleDateFilter={() => setShowDateFilter(!showDateFilter)} />
+      <Header
+        toggleDateFilter={() => setShowDateFilter(!showDateFilter)}
+        onDownloadPDF={handleDownloadPDF}
+      />
       {showDateFilter && (
         <div className="fixed top-16 right-4 z-50">
           <DateFilters setStartDate={setStartDate} setEndDate={setEndDate} closeFilter={() => setShowDateFilter(false)} />
@@ -236,7 +245,7 @@ const TopReglesDetails = () => {
                       >
                         <path
                           fillRule="evenodd"
-                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 111.414 1.414l-4 4a1 1 01-1.414 0l-4-4a1 1 010-1.414z"
+                          d="M5.293 7.293a1 1 011.414 0L10 10.586l3.293-3.293a1 1 111.414 1.414l-4 4a1 1 01-1.414 0l-4-4a1 1 010-1.414z"
                           clipRule="evenodd"
                         />
                       </svg>
@@ -264,7 +273,7 @@ const TopReglesDetails = () => {
                         <a
                           href="#"
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => handleDownload('pdf')}
+                          onClick={() => handleDownloadPDF()}  // Update to match the new function name
                         >
                           PDF
                         </a>
@@ -285,7 +294,7 @@ const TopReglesDetails = () => {
       </main>
       <Footer />
     </div>
-  );  
+  );
 };
 
 export default TopReglesDetails;

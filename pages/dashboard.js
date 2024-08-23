@@ -12,6 +12,10 @@ import TopRulesITS from '../components/TopRules';
 import { formatDate } from '../utils/formatDate';
 import { fetchStockData, fetchRegleDataAlternative } from '../services/api';
 import { Spinner } from '../components/Spinner';
+import { FaTimes } from 'react-icons/fa';
+import CommentPalette from '../components/CommentPalette';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 export default function Dashboard() {
   const [showDateFilter, setShowDateFilter] = useState(false);
@@ -21,8 +25,19 @@ export default function Dashboard() {
   const [stockData, setStockData] = useState([]);
   const [regleData, setRegleData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [commentMode, setCommentMode] = useState(false);
+  const [selectedTool, setSelectedTool] = useState(null);
+  const [elements, setElements] = useState([]);
+  const [selectedElement, setSelectedElement] = useState(null);
+  const [draggingHandle, setDraggingHandle] = useState(null); // For resizing and rotating
   const dateFilterRef = useRef();
   const router = useRouter();
+
+  const combinedOverviewRef = useRef(null);
+  const topRulesFTTHRef = useRef(null);
+  const topRulesITSRef = useRef(null);
+  const stockVsSortantsApercuRef = useRef(null);
+  const manualBreakdownRef = useRef(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,6 +80,11 @@ export default function Dashboard() {
     };
   }, [showDateFilter]);
 
+  const toggleCommentMode = () => {
+    setCommentMode(!commentMode);
+    setSelectedTool(null); // Désactiver tous les outils lorsque le mode commentaire est désactivé
+  };
+
   const today = formatDate(new Date());
   const duration = startDate && endDate
     ? `Durée : ${Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24))} jours`
@@ -91,37 +111,321 @@ export default function Dashboard() {
   const objectivePercentage = (objectifValue / backlogToday) * 100;
 
   const handleCardClick = () => {
-    router.push('/backlogDetails');
+    if (!commentMode) {
+      router.push('/backlogDetails');
+    }
   };
 
   const handleTopRulesITSClick = () => {
-    router.push('/topReglesDetails');
+    if (!commentMode) {
+      router.push('/topReglesDetails');
+    }
   };
 
   const handleStockVsSortantsClick = () => {
-    router.push('/StockVsClosedDetails');
+    if (!commentMode) {
+      router.push('/StockVsClosedDetails');
+    }
   };
 
   const handleTopRulesFTTHClick = () => {
-    router.push('/topReglesDetails');
+    if (!commentMode) {
+      router.push('/topReglesDetails');
+    }
   };
 
+  const handleAddComment = () => {
+    if (commentMode) setSelectedTool('comment');
+  };
+
+  const handleArrowClick = () => {
+    if (commentMode) setSelectedTool('arrow');
+  };
+
+  const handleDashboardClick = (e) => {
+    const scrollX = window.scrollX || document.documentElement.scrollLeft;
+    const scrollY = window.scrollY || document.documentElement.scrollTop;
+
+    if (!commentMode) return;
+
+    if (selectedTool === 'comment') {
+      const newElement = {
+        id: Date.now(),
+        type: 'comment',
+        x: e.clientX + scrollX,
+        y: e.clientY + scrollY,
+        content: 'Ajouter un commentaire',
+        isEditing: false,
+      };
+      setElements([...elements, newElement]);
+      setSelectedTool(null);
+    } else if (selectedTool === 'arrow') {
+      const newElement = {
+        id: Date.now(),
+        type: 'arrow',
+        x: e.clientX + scrollX,
+        y: e.clientY + scrollY,
+        content: '→',
+        size: 24, // Default size
+        rotation: 0, // Default rotation
+      };
+      setElements([...elements, newElement]);
+      setSelectedTool(null);
+    }
+  };
+
+  const handleDoubleClick = (index) => {
+    if (!elements[index].isEditing) {
+      setSelectedElement(index);
+    }
+  };
+
+  const handleTextChange = (e, id) => {
+    setElements(elements.map((el) => (el.id === id ? { ...el, content: e.target.value } : el)));
+  };
+
+  const handleBlur = (id) => {
+    setElements(elements.map((el) => (el.id === id ? { ...el, isEditing: false } : el)));
+    setSelectedElement(null);
+  };
+
+  const handleKeyDown = (e, id) => {
+    if (e.key === 'Enter') {
+      handleBlur(id);
+    }
+  };
+
+  const handleElementClick = (id) => {
+    if (commentMode && selectedTool === 'erase') {
+      setElements(prevElements => prevElements.filter((el) => el.id !== id));
+    }
+  };
+
+  const handleModify = (id) => {
+    setElements(elements.map((el) => (el.id === id ? { ...el, isEditing: true } : el)));
+    setSelectedElement(null);
+  };
+
+  const handleDelete = (id) => {
+    setElements(prevElements => prevElements.filter((el) => el.id !== id));
+    setSelectedElement(null);
+  };
+
+  const handleDragStart = (id, e) => {
+    const element = elements.find(el => el.id === id);
+    e.dataTransfer.setData('text/plain', JSON.stringify({ id, startX: element.x, startY: element.y, offsetX: e.clientX, offsetY: e.clientY }));
+  };
+
+  const handleDrop = (e) => {
+    try {
+      const data = e.dataTransfer.getData('text/plain');
+      if (data) {
+        const parsedData = JSON.parse(data);
+        const { id, startX, startY, offsetX, offsetY } = parsedData;
+        const newX = startX + (e.clientX - offsetX);
+        const newY = startY + (e.clientY - offsetY);
+
+        const updatedElements = elements.map((el) =>
+          el.id === id ? { ...el, x: newX, y: newY } : el
+        );
+        setElements(updatedElements);
+      }
+    } catch (error) {
+      console.error('Erreur lors du déplacement de l\'élément:', error);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const startResizingOrRotating = (handle, index, e) => {
+    setDraggingHandle({ handle, index });
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', stopResizingOrRotating);
+  };
+
+  const stopResizingOrRotating = () => {
+    setDraggingHandle(null);
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', stopResizingOrRotating);
+  };
+
+  const onMouseMove = (e) => {
+    if (!draggingHandle) return;
+
+    const { handle, index } = draggingHandle;
+    const element = elements[index];
+    const centerX = element.x + 12; // Center of arrow (assuming initial size of 24px)
+    const centerY = element.y + 12;
+
+    const deltaX = e.clientX - centerX;
+    const deltaY = e.clientY - centerY;
+
+    if (handle === 'resize') {
+      const newSize = Math.max(10, Math.sqrt(deltaX * deltaX + deltaY * deltaY));
+      setElements(elements.map((el, i) => i === index ? { ...el, size: newSize } : el));
+    } else if (handle === 'rotate') {
+      const newRotation = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
+      setElements(elements.map((el, i) => i === index ? { ...el, rotation: newRotation } : el));
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 15;
+    const contentWidth = pageWidth - margin * 2;
+    let yOffset = margin;
+  
+    // Add Report Generation Date
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal'); // Text in normal font
+    doc.text(`Généré le : ${today}`, pageWidth - margin, yOffset, { align: 'right' });
+    yOffset += 10;
+  
+    // Add Report Title
+    doc.setFontSize(22);
+    doc.setTextColor(0, 0, 128);
+    doc.setFont('helvetica', 'bold'); // Title in bold
+    doc.text('Rapport du Dashboard FTTH', pageWidth / 2, yOffset, { align: 'center' });
+    yOffset += 15;
+  
+    // Add Date Range Information
+    if (startDate && endDate) {
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('helvetica', 'normal'); // Text in normal font
+      doc.text(`Période: ${startDate} à ${endDate} (${duration})`, pageWidth / 2, yOffset, { align: 'center' });
+      yOffset += 10;
+    }
+  
+    // Add a Horizontal Line Separator
+    doc.setDrawColor(200);
+    doc.line(margin, yOffset, pageWidth - margin, yOffset);
+    yOffset += 10;
+  
+    // Add Statistics Section
+    doc.setFontSize(16);
+    doc.setTextColor(0, 0, 128);
+    doc.setFont('helvetica', 'bold'); // Heading in bold
+    doc.text('Statistiques', margin, yOffset);
+    yOffset += 8;
+  
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'normal'); // Stats in normal font
+    doc.text(`• Backlog FTTH J: ${backlogToday} (${backlogDifferenceText})`, margin, yOffset);
+    yOffset += 6;
+    doc.text(`• Objectif: ${objectifValue} (${objectivePercentage.toFixed(1)}% de commandes non traitées)`, margin, yOffset);
+    yOffset += 6;
+    doc.text(`• Backlog FTTH J-1: ${backlogJ1Today} (${backlogJ1DifferenceText})`, margin, yOffset);
+    yOffset += 6;
+    doc.text(`• Dossiers Traités Aujourd'hui: ${dossiersTraitesToday}`, margin, yOffset);
+    yOffset += 12;
+  
+    // Add another Horizontal Line Separator
+    doc.setDrawColor(200);
+    doc.line(margin, yOffset, pageWidth - margin, yOffset);
+    yOffset += 10;
+  
+    // Function to Add Charts to PDF
+    const addChartToPDF = async (chartRef, title) => {
+      if (chartRef.current) {
+        const chartElement = chartRef.current.querySelector('canvas');
+        if (!chartElement) return;
+  
+        const canvas = await html2canvas(chartElement, {
+          backgroundColor: null,
+          scale: 2,
+        });
+  
+        const imgData = canvas.toDataURL('image/png');
+        const imgHeight = (canvas.height * contentWidth) / canvas.width;
+  
+        // Check if the image fits on the current page, else add new page
+        if (yOffset + imgHeight > pageHeight - margin) {
+          doc.addPage();
+          yOffset = margin;
+        }
+  
+        // Add Chart Title
+        doc.setFontSize(14);
+        doc.setTextColor(0, 0, 128);
+        doc.setFont('helvetica', 'bold'); // Chart title in bold
+        doc.text(title, margin, yOffset);
+        yOffset += 6;
+  
+        // Add Chart Image
+        doc.addImage(imgData, 'PNG', margin, yOffset, contentWidth, imgHeight);
+  
+        // If it's the Manual Breakdown chart, calculate and add percentages
+        if (title === 'Répartition Manuelle: Acteurs') {
+          const chartInstance = chartRef.current.chartInstance; // Get the chart instance
+          if (chartInstance) {
+            const data = chartInstance.data.datasets[0].data; // Get the data
+            const labels = chartInstance.data.labels; // Get the labels
+  
+            // Calculate total
+            const total = data.reduce((sum, value) => sum + value, 0);
+  
+            // Create a new canvas for the percentages
+            const percentageCanvas = document.createElement('canvas');
+            const percentageCtx = percentageCanvas.getContext('2d');
+            percentageCanvas.width = 150;
+            percentageCanvas.height = imgHeight;
+            
+            // Draw percentages on the new canvas
+            percentageCtx.fillStyle = 'black';
+            percentageCtx.font = '12px Arial';
+            labels.forEach((label, index) => {
+              const percentage = ((data[index] / total) * 100).toFixed(1);
+              percentageCtx.fillText(`${label}: ${percentage}%`, 10, (index + 1) * 20);
+            });
+  
+            // Convert the percentages canvas to an image
+            const percentageImgData = percentageCanvas.toDataURL('image/png');
+  
+            // Add the percentage image next to the doughnut chart
+            doc.addImage(percentageImgData, 'PNG', margin + contentWidth + 5, yOffset, 40, imgHeight);
+          }
+        }
+  
+        yOffset += iAmgHeight + 10;
+      }
+    };
+  
+    // Add Charts
+    await addChartToPDF(combinedOverviewRef, "Vue d'ensemble combinée");
+    await addChartToPDF(topRulesITSRef, 'Top 5 RÈGLES (Équipe FTTH)');
+    await addChartToPDF(topRulesFTTHRef, 'Top 5 RÈGLES par jour (Équipe FTTH)');
+    await addChartToPDF(stockVsSortantsApercuRef, 'Stock Vs Sortants Aperçu');
+    await addChartToPDF(manualBreakdownRef, 'Répartition Manuelle: Acteurs');
+  
+    // Save PDF
+    doc.save(`dashboard_report_${today}.pdf`);
+  };
+
+  
+  
+
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100">
-      <Header toggleDateFilter={toggleDateFilter} setMenuOpen={setIsMenuOpen} />
+    <div className="relative flex flex-col min-h-screen bg-gray-100" onClick={handleDashboardClick} onDrop={handleDrop} onDragOver={handleDragOver}>
+      <Header toggleDateFilter={toggleDateFilter} setMenuOpen={setIsMenuOpen} toggleCommentMode={toggleCommentMode} onDownloadPDF={handleDownloadPDF} />
       {showDateFilter && (
         <div ref={dateFilterRef} className="fixed top-16 right-4 z-50">
           <DateFilters setStartDate={setStartDate} setEndDate={setEndDate} closeFilter={() => setShowDateFilter(false)} />
         </div>
       )}
-      <main className="container mx-auto p-6 pt-16 flex-grow transition-all duration-300 ease-in-out">
+      <main className="container mx-auto p-6 pt-16 flex-grow">
         <div className="flex flex-col items-center">
           <h1 className="text-4xl font-bold mt-6 mb-6 text-center text-blue-600">Dashboard FTTH</h1>
           {loading ? (
             <Spinner />
           ) : (
             <>
-              <div className="mb-6 flex flex-col md:flex-row justify-between items-center w-full max-w-6xl mx-auto">
+              <div className="mb-6 flex flex-col md:flex-row justify-between.items-center w-full max-w-6xl mx-auto">
                 <span className="text-lg font-medium">
                   {startDate && endDate ? `De : ${startDate} À : ${endDate}` : `Date du jour : ${today}`}
                 </span>
@@ -159,19 +463,19 @@ export default function Dashboard() {
                 />
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
-                <div onClick={handleCardClick} className="cursor-pointer lg:col-span-2 hover:shadow-lg transition-shadow duration-300 ease-in-out">
+                <div ref={combinedOverviewRef} onClick={handleCardClick} className="cursor-pointer lg:col-span-2 hover:shadow-lg transition-shadow duration-300 ease-in-out">
                   <CombinedOverview startDate={startDate} endDate={endDate} />
                 </div>
-                <div onClick={handleTopRulesFTTHClick} className="cursor-pointer lg:col-span-1 hover:shadow-lg transition-shadow duration-300 ease-in-out">
+                <div ref={topRulesFTTHRef} onClick={handleTopRulesFTTHClick} className="cursor-pointer lg:col-span-1 hover:shadow-lg transition-shadow duration-300 ease-in-out">
                   <TopRulesFTTH startDate={startDate} endDate={endDate} />
                 </div>
-                <div onClick={handleTopRulesITSClick} className="cursor-pointer lg:col-span-1 hover:shadow-lg transition-shadow duration-300 ease-in-out">
+                <div ref={topRulesITSRef} onClick={handleTopRulesITSClick} className="cursor-pointer lg:col-span-1 hover:shadow-lg transition-shadow duration-300 ease-in-out">
                   <TopRulesITS />
                 </div>
-                <div onClick={handleStockVsSortantsClick} className="cursor-pointer lg:col-span-2 hover:shadow-lg transition-shadow duration-300 ease-in-out">
+                <div ref={stockVsSortantsApercuRef} onClick={handleStockVsSortantsClick} className="cursor-pointer lg:col-span-2 hover:shadow-lg transition-shadow duration-300 ease-in-out">
                   <StockVsSortantsApercu startDate={startDate} endDate={endDate} />
                 </div>
-                <div className="lg:col-span-2 mb-8">
+                <div ref={manualBreakdownRef} className="lg:col-span-2 mb-8">
                   <ManualBreakdown startDate={startDate} endDate={endDate} />
                 </div>
               </div>
@@ -180,6 +484,118 @@ export default function Dashboard() {
         </div>
       </main>
       <Footer />
+
+      {/* Affichage des éléments ajoutés */}
+      {elements.map((el, index) => (
+        <div
+          key={el.id}
+          style={{
+            position: 'absolute',
+            top: el.y,
+            left: el.x,
+            backgroundColor: el.type === 'comment' ? 'yellow' : 'transparent',
+            padding: el.type === 'comment' ? '5px' : '0',
+            fontSize: el.type === 'arrow' ? `${el.size}px` : '14px',
+            color: el.type === 'arrow' ? 'red' : 'black',
+            cursor: selectedTool === 'erase' && commentMode ? 'not-allowed' : el.isEditing ? 'text' : 'pointer',
+            transform: el.type === 'arrow' ? `rotate(${el.rotation}deg)` : 'none', // Apply rotation to arrow
+          }}
+          draggable={!el.isEditing && selectedTool !== 'erase'}
+          onDragStart={(e) => handleDragStart(el.id, e)}
+          onDoubleClick={() => handleDoubleClick(index)}
+        >
+          {el.isEditing ? (
+            <input
+              type="text"
+              value={el.content}
+              onChange={(e) => handleTextChange(e, el.id)}
+              onBlur={() => handleBlur(el.id)}
+              onKeyDown={(e) => handleKeyDown(e, el.id)}
+              autoFocus
+            />
+          ) : (
+            el.content
+          )}
+          {el.type === 'arrow' && (
+            <>
+              {/* Handle for resizing */}
+              <div
+                style={{
+                  position: 'absolute',
+                  right: '-10px',
+                  top: '-10px',
+                  width: '10px',
+                  height: '10px',
+                  backgroundColor: 'blue',
+                  cursor: 'nwse-resize',
+                }}
+                onMouseDown={(e) => startResizingOrRotating('resize', index, e)}
+              ></div>
+              {/* Handle for rotating */}
+              <div
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  top: '-20px',
+                  width: '10px',
+                  height: '10px',
+                  backgroundColor: 'green',
+                  cursor: 'grab',
+                  transform: 'translateX(-50%)',
+                }}
+                onMouseDown={(e) => startResizingOrRotating('rotate', index, e)}
+              ></div>
+            </>
+          )}
+          {selectedElement === index && !el.isEditing && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '-30px',
+                left: '0',
+                backgroundColor: 'white',
+                border: '1px solid #ccc',
+                padding: '5px',
+                borderRadius: '5px',
+                zIndex: 1000,
+              }}
+            >
+              <button
+                style={{ marginRight: '5px' }}
+                onClick={() => handleModify(el.id)}
+              >
+                Modifier
+              </button>
+              <button
+                style={{ color: 'red' }}
+                onClick={() => handleDelete(el.id)}
+              >
+                Supprimer
+              </button>
+            </div>
+          )}
+        </div>
+      ))}
+
+      {/* Affichage de la palette de commentaires lorsqu'elle est activée */}
+      {commentMode && (
+        <>
+          <div className="fixed inset-0 bg-transparent z-40"></div>
+
+          <CommentPalette
+            onAddComment={handleAddComment}
+            onArrowClick={handleArrowClick}
+          />
+
+          <button
+            className="fixed bottom-4 right-4 bg-red-600 text-white p-4 rounded-full shadow-lg z-50"
+            onClick={toggleCommentMode}
+            style={{ pointerEvents: 'auto' }}
+          >
+            <FaTimes size={20} />
+          </button>
+        </>
+      )}
     </div>
   );
 }

@@ -17,6 +17,7 @@ import { fetchStockData } from '../services/api';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import html2canvas from 'html2canvas';
 
 // Enregistrer les composants de Chart.js
 ChartJS.register(
@@ -33,31 +34,27 @@ const BacklogDetails = () => {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [showDateFilter, setShowDateFilter] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [filteredData, setFilteredData] = useState([]);
-  const [loading, setLoading] = useState(true); // Ajout du state pour gérer le chargement
-  const graphRef1 = useRef();
-  const graphRef2 = useRef();
-  const graphRef3 = useRef();
+  const [loading, setLoading] = useState(true);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const graphRefs = useRef([]);
+  const dropdownRef = useRef(null);
   const today = new Date().toLocaleString('fr-FR', { dateStyle: 'short' });
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true); // Activer le chargement avant de récupérer les données
+      setLoading(true);
       try {
         const result = await fetchStockData();
 
-        // Déterminer la plage de dates à utiliser
         const today = new Date();
         const defaultStartDate = new Date();
         defaultStartDate.setDate(today.getDate() - 30);
         const defaultEndDate = today;
 
-        // Utiliser les dates fournies si disponibles, sinon utiliser les 30 derniers jours
         const rangeStartDate = startDate ? new Date(startDate) : defaultStartDate;
         const rangeEndDate = endDate ? new Date(endDate) : defaultEndDate;
 
-        // Filtrer les données en fonction de la plage de dates sélectionnée
         const filtered = result.filter((item) => {
           const itemDate = new Date(item.date);
           return itemDate >= rangeStartDate && itemDate <= rangeEndDate;
@@ -66,11 +63,24 @@ const BacklogDetails = () => {
       } catch (error) {
         console.error('Error fetching stock data:', error);
       } finally {
-        setLoading(false); // Désactiver le chargement après la récupération des données
+        setLoading(false);
       }
     };
     fetchData();
   }, [startDate, endDate]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const chartOptions = {
     responsive: true,
@@ -98,7 +108,7 @@ const BacklogDetails = () => {
     },
     scales: {
       x: {
-        type: 'category', // Assurez-vous que le type de l'échelle est bien "category"
+        type: 'category',
         ticks: {
           autoSkip: true,
           maxTicksLimit: 10,
@@ -110,110 +120,107 @@ const BacklogDetails = () => {
     },
   };
 
-  const handleDownload = async (format) => {
-    setIsDropdownOpen(false);
-    const dateRange = startDate && endDate ? `_${startDate}_to_${endDate}` : '';
-
+  const handleDownload = (format) => {
     if (format === 'pdf') {
-      const doc = new jsPDF('p', 'mm', 'a4');
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const margin = 15;
-      const titleHeight = 10;
-      const graphHeight = 60;
-
-      doc.setFontSize(10);
-      doc.text(`Effectué le : ${today}`, pageWidth - margin, 10, { align: 'right' });
-
-      doc.setFontSize(24);
-      doc.setTextColor(0, 0, 255);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Détails du Backlog', pageWidth / 2, 20, { align: 'center' });
-
-      if (startDate && endDate) {
-        const duration = Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24));
-        doc.setFontSize(12);
-        doc.setTextColor(0, 0, 0);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`De : ${startDate} à : ${endDate} (Durée : ${duration} jours)`, margin, 30);
-      }
-
-      let yOffset = 40;
-
-      if (graphRef1.current) {
-        const imgData1 = graphRef1.current.toBase64Image();
-        doc.setFontSize(16);
-        doc.setTextColor(54, 162, 235);
-        doc.text('Backlog FTTH J Par Jour (Equipe FTTH)', pageWidth / 2, yOffset, { align: 'center' });
-        doc.addImage(imgData1, 'PNG', margin, yOffset + 10, pageWidth - 2 * margin, graphHeight);
-        yOffset += graphHeight + 20;
-      }
-
-      if (graphRef2.current) {
-        const imgData2 = graphRef2.current.toBase64Image();
-        doc.setFontSize(16);
-        doc.setTextColor(255, 99, 132);
-        doc.text('Backlog FTTH J-1 Par Jour (Equipe FTTH)', pageWidth / 2, yOffset, { align: 'center' });
-        doc.addImage(imgData2, 'PNG', margin, yOffset + 10, pageWidth - 2 * margin, graphHeight);
-        yOffset += graphHeight + 20;
-      }
-
-      if (graphRef3.current) {
-        const imgData3 = graphRef3.current.toBase64Image();
-        doc.setFontSize(16);
-        doc.setTextColor(75, 192, 192);
-        doc.text('Dossiers Traités Par Jour (Equipe FTTH)', pageWidth / 2, yOffset, { align: 'center' });
-        doc.addImage(imgData3, 'PNG', margin, yOffset + 10, pageWidth - 2 * margin, graphHeight);
-        yOffset += graphHeight + 20;
-      }
-
-      const tableData = filteredData.map((row, index) => [
-        index + 1,
-        row.date,
-        row.stock,
-        row.non_traite,
-        row.traite,
-      ]);
-
-      doc.autoTable({
-        head: [['#', 'Date', 'Backlog FTTH J', 'Backlog FTTH J-1 (Non Traité)', 'Dossiers Traités']],
-        body: tableData,
-        startY: yOffset,
-        theme: 'striped',
-      });
-
-      const fileName = `backlog-details${dateRange}.pdf`;
-      doc.save(fileName);
+      handleDownloadPDF();
     } else if (format === 'csv') {
-      const csvData = filteredData.map((row) => ({
-        Date: row.date,
-        'Backlog FTTH J': row.stock,
-        'Backlog FTTH J-1 (Non Traité)': row.non_traite,
-        'Dossiers Traités': row.traite,
-      }));
-      const csvContent = csvData.map(e => Object.values(e).join(',')).join('\n');
-      const csvLink = document.createElement('a');
-      csvLink.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv' }));
-      csvLink.download = `backlog-details${dateRange}.csv`;
-      document.body.appendChild(csvLink);
-      csvLink.click();
-      document.body.removeChild(csvLink);
+      // Logique pour télécharger en CSV
+      console.log('Télécharger CSV');
     } else if (format === 'xlsx') {
-      const worksheet = XLSX.utils.json_to_sheet(filteredData.map((row) => ({
-        Date: row.date,
-        'Backlog FTTH J': row.stock,
-        'Backlog FTTH J-1 (Non Traité)': row.non_traite,
-        'Dossiers Traités': row.traite,
-      })));
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'BacklogDetails');
-      XLSX.writeFile(workbook, `backlog-details${dateRange}.xlsx`);
+      // Logique pour télécharger en XLSX
+      console.log('Télécharger XLSX');
     }
+  };
+
+  const handleDownloadPDF = async () => {
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 15;
+    const contentWidth = pageWidth - margin * 2;
+    let yOffset = margin;
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Généré le : ${today}`, pageWidth - margin, yOffset, { align: 'right' });
+    yOffset += 10;
+
+    doc.setFontSize(22);
+    doc.setTextColor(0, 0, 128);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Détails du Backlog', pageWidth / 2, yOffset, { align: 'center' });
+    yOffset += 15;
+
+    if (startDate && endDate) {
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('helvetica', 'normal');
+      const duration = `(${Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24))} jours)`;
+      doc.text(`Période: ${startDate} à ${endDate} ${duration}`, pageWidth / 2, yOffset, { align: 'center' });
+      yOffset += 10;
+    }
+
+    doc.setDrawColor(200);
+    doc.line(margin, yOffset, pageWidth - margin, yOffset);
+    yOffset += 10;
+
+    for (let index = 0; index < graphRefs.current.length; index++) {
+      const graphCanvas = graphRefs.current[index]?.querySelector('canvas');
+
+      if (graphCanvas) {
+        const canvas = await html2canvas(graphCanvas, {
+          backgroundColor: null,
+          scale: 2,
+        });
+        const imgData = canvas.toDataURL('image/png');
+        const imgHeight = (canvas.height * contentWidth) / canvas.width;
+
+        if (yOffset + imgHeight > pageHeight - margin) {
+          doc.addPage();
+          yOffset = margin;
+        }
+
+        const titles = [
+          'Backlog FTTH J Par Jour (Equipe FTTH)',
+          'Backlog FTTH J-1 Par Jour (Equipe FTTH)',
+          'Dossiers Traités Par Jour (Equipe FTTH)',
+        ];
+        const colors = [
+          [54, 162, 235],
+          [255, 99, 132],
+          [75, 192, 192],
+        ];
+
+        doc.setFontSize(16);
+        doc.setTextColor(...colors[index]);
+        doc.setFont('helvetica', 'bold');
+        doc.text(titles[index], margin, yOffset);
+        yOffset += 10;
+
+        doc.addImage(imgData, 'PNG', margin, yOffset, contentWidth, imgHeight);
+        yOffset += imgHeight + 10;
+      }
+    }
+
+    doc.setDrawColor(200);
+    doc.line(margin, yOffset, pageWidth - margin, yOffset);
+    yOffset += 10;
+
+    const tableData = filteredData.map(row => [row.date, row.stock, row.non_traite, row.traite]);
+    doc.autoTable({
+      head: [['Date', 'Backlog FTTH J', 'Backlog FTTH J-1 (Non Traité)', 'Dossiers Traités']],
+      body: tableData,
+      startY: yOffset + 10,
+      theme: 'grid',
+    });
+
+    const fileName = `backlog-details_${today}.pdf`;
+    doc.save(fileName);
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
-      <Header toggleDateFilter={() => setShowDateFilter(!showDateFilter)} />
+      <Header toggleDateFilter={() => setShowDateFilter(!showDateFilter)} onDownloadPDF={handleDownloadPDF} />
       {showDateFilter && (
         <div className="fixed top-16 right-4 z-50">
           <DateFilters setStartDate={setStartDate} setEndDate={setEndDate} closeFilter={() => setShowDateFilter(false)} />
@@ -237,11 +244,10 @@ const BacklogDetails = () => {
                 )}
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full max-w-6xl mx-auto">
-                <div>
+                <div ref={(el) => (graphRefs.current[0] = el)}>
                   <h2 className="text-xl md:text-2xl font-bold mb-4 text-center text-blue-600">Backlog FTTH J Par Jour (Equipe FTTH)</h2>
                   <div style={{ position: 'relative', height: '300px', width: '100%' }}>
                     <Line
-                      ref={graphRef1}
                       data={{
                         labels: filteredData.map(row => row.date),
                         datasets: [
@@ -259,11 +265,10 @@ const BacklogDetails = () => {
                     />
                   </div>
                 </div>
-                <div>
+                <div ref={(el) => (graphRefs.current[1] = el)}>
                   <h2 className="text-xl md:text-2xl font-bold mb-4 text-center text-red-600">Backlog FTTH J-1 Par Jour (Equipe FTTH)</h2>
                   <div style={{ position: 'relative', height: '300px', width: '100%' }}>
                     <Line
-                      ref={graphRef2}
                       data={{
                         labels: filteredData.map(row => row.date),
                         datasets: [
@@ -281,11 +286,10 @@ const BacklogDetails = () => {
                     />
                   </div>
                 </div>
-                <div>
+                <div ref={(el) => (graphRefs.current[2] = el)}>
                   <h2 className="text-xl md:text-2xl font-bold mb-4 text-center text-green-600">Dossiers Traités Par Jour (Equipe FTTH)</h2>
                   <div style={{ position: 'relative', height: '300px', width: '100%' }}>
                     <Line
-                      ref={graphRef3}
                       data={{
                         labels: filteredData.map(row => row.date),
                         datasets: [
@@ -328,8 +332,9 @@ const BacklogDetails = () => {
                   </tbody>
                 </table>
               </div>
+              {/* Boutons sous le tableau */}
               <div className="flex flex-col md:flex-row justify-end mt-4 space-x-0 md:space-x-4 w-full max-w-6xl mx-auto">
-                <div className="relative inline-block text-left mb-4 md:mb-0">
+                <div className="relative inline-block text-left mb-4 md:mb-0" ref={dropdownRef}>
                   <div>
                     <button
                       type="button"
@@ -347,7 +352,7 @@ const BacklogDetails = () => {
                       >
                         <path
                           fillRule="evenodd"
-                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 111.414 1.414l-4 4a1 1 01-1.414 0l-4-4a1 1 010-1.414z"
+                          d="M5.293 7.293a1 1 011.414 0L10 10.586l3.293-3.293a1 1 111.414 1.414l-4 4a1 1 01-1.414 0l-4-4a1 1 010-1.414z"
                           clipRule="evenodd"
                         />
                       </svg>

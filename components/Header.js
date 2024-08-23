@@ -1,25 +1,32 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaBars, FaSearch, FaBell, FaFilter } from 'react-icons/fa';
+import { FaBars, FaSearch, FaBell, FaFilter, FaComment, FaDownload } from 'react-icons/fa';
 import Link from 'next/link';
 
-const Header = ({ toggleDateFilter, setMenuOpen }) => {
+const Header = ({ toggleDateFilter, toggleCommentMode, onDownloadPDF }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const menuRef = useRef(null);
+  const dropdownRef = useRef(null);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
-    setMenuOpen(!isMenuOpen);
+  };
+
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
   };
 
   const handleClickOutside = (event) => {
     if (menuRef.current && !menuRef.current.contains(event.target)) {
       setIsMenuOpen(false);
-      setMenuOpen(false);
+    }
+    if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      setIsDropdownOpen(false);
     }
   };
 
   useEffect(() => {
-    if (isMenuOpen) {
+    if (isMenuOpen || isDropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     } else {
       document.removeEventListener('mousedown', handleClickOutside);
@@ -28,7 +35,7 @@ const Header = ({ toggleDateFilter, setMenuOpen }) => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isMenuOpen]);
+  }, [isMenuOpen, isDropdownOpen]);
 
   return (
     <>
@@ -36,26 +43,77 @@ const Header = ({ toggleDateFilter, setMenuOpen }) => {
         <div className="flex items-center">
           <FaBars className="mr-4 cursor-pointer" onClick={toggleMenu} />
           <Link href="/dashboard">
-            <span className="text-xl font-bold text-white cursor-pointer">FTTH DASHBOARD</span>
+            <span className="text-xl font-bold text-white cursor-pointer">
+              FTTH DASHBOARD
+            </span>
           </Link>
         </div>
-        <div className="flex items-center">
+        <div className="flex items-center relative">
           <FaSearch className="mr-4 cursor-pointer" />
           <FaBell className="mr-4 cursor-pointer" />
-          <FaFilter className="cursor-pointer" onClick={toggleDateFilter} />
+          <FaComment className="mr-4 cursor-pointer" onClick={toggleCommentMode} />
+          <FaFilter className="mr-4 cursor-pointer" onClick={toggleDateFilter} />
+          <div className="relative">
+            <FaDownload className="cursor-pointer" onClick={toggleDropdown} />
+            {isDropdownOpen && (
+              <div
+                ref={dropdownRef}
+                className="absolute right-0 mt-2 w-48 bg-white text-black rounded-md shadow-lg z-50"
+              >
+                <ul className="py-1">
+                  <li
+                    className="block px-4 py-2 text-sm hover:bg-gray-200 cursor-pointer"
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      onDownloadPDF();  // Téléchargement PDF
+                    }}
+                  >
+                    Enregistrer un rapport
+                  </li>
+                  <li
+                    className="block px-4 py-2 text-sm hover:bg-gray-200 cursor-pointer"
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      onDownloadPDF();  // Téléchargement PDF
+                    }}
+                  >
+                    Télécharger un rapport
+                  </li>
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
       </header>
-      <div className={`fixed top-16 left-0 h-full bg-gray-800 text-white transition-transform duration-300 ease-in-out ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:w-64 w-3/4`} ref={menuRef} style={{ zIndex: 40 }}>
+      <div
+        className={`fixed top-16 left-0 h-full bg-gray-800 text-white transition-transform duration-300 ease-in-out ${
+          isMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        } md:w-64 w-3/4`}
+        ref={menuRef}
+        style={{ zIndex: 40 }}
+      >
         <div className="p-4">
           <h2 className="text-xl font-bold mb-4">Menu</h2>
           <ul>
-            <li className="mb-2"><a href="#">Page 1</a></li>
-            <li className="mb-2"><a href="#">Page 2</a></li>
-            <li className="mb-2"><a href="#">Page 3</a></li>
+            <li className="mb-2">
+              <a href="#">Page 1</a>
+            </li>
+            <li className="mb-2">
+              <a href="#">Page 2</a>
+            </li>
+            <li className="mb-2">
+              <a href="#">Page 3</a>
+            </li>
           </ul>
         </div>
       </div>
-      {isMenuOpen && <div className="fixed inset-0 bg-black opacity-50" style={{ zIndex: 30 }} onClick={toggleMenu} />}
+      {isMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black opacity-50"
+          style={{ zIndex: 30 }}
+          onClick={toggleMenu}
+        />
+      )}
     </>
   );
 };
