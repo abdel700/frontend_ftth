@@ -5,15 +5,6 @@
 body {
   font-family: 'Helvetica Neue', Arial, sans-serif;
   background-color: #f3f4f6;
-  margin: 0;
-  padding: 0;
-  height: 100%;
-}
-
-header {
-  background-color: #0000ff; /* Couleur bleue pour le header */
-  padding-top: env(safe-area-inset-top); /* Gère les encoches et la status bar */
-  height: calc(100vh + env(safe-area-inset-top));
 }
 
 .card {
@@ -46,7 +37,17 @@ h1, h2 {
     opacity: 1;
   }
 }
+/* CSS pour le spinner */
+.spinner-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin-bottom: 100px; /* Ajustez cette valeur pour modifier la hauteur */
+}
 
+
+/* CSS for the spinner */
 .spinner-container {
   display: flex;
   justify-content: center;
