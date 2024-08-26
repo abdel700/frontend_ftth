@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import Modal from 'react-modal';
 import { FaTrashAlt, FaDownload, FaEnvelope } from 'react-icons/fa';
 import { listFiles, uploadFile, deleteFile, downloadFile } from '../services/api';
 import { Spinner } from '../components/Spinner';
@@ -8,6 +9,10 @@ import { Spinner } from '../components/Spinner';
 export default function UploadPage() {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailDescription, setEmailDescription] = useState('');
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -57,29 +62,42 @@ export default function UploadPage() {
 
   const handleFileDownload = async (fileId) => {
     try {
-        const response = await fetch(`https://tranquil-shelf-72645-6e0212cb96fc.herokuapp.com/dashboard/api/download/${fileId}/`);
-        const data = await response.json();
-        if (response.ok && data.url) {
-            window.open(data.url, '_blank');
-        } else {
-            throw new Error("Erreur lors du téléchargement du fichier");
-        }
+      const response = await fetch(`https://tranquil-shelf-72645-6e0212cb96fc.herokuapp.com/dashboard/api/download/${fileId}/`);
+      const data = await response.json();
+      if (response.ok && data.url) {
+        window.open(data.url, '_blank');
+      } else {
+        throw new Error("Erreur lors du téléchargement du fichier");
+      }
     } catch (error) {
-        console.error('Erreur lors du téléchargement du fichier:', error);
-        alert("Une erreur est survenue lors du téléchargement. Veuillez réessayer.");
+      console.error('Erreur lors du téléchargement du fichier:', error);
+      alert("Une erreur est survenue lors du téléchargement. Veuillez réessayer.");
     }
   };
 
-  const handleFileSend = async (fileId) => {
-    alert('Envoyer le fichier avec ID: ' + fileId);
+  const openModal = (file) => {
+    setSelectedFile(file);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEmailSubject('');
+    setEmailDescription('');
+  };
+
+  const handleSendEmail = () => {
+    const mailtoLink = `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailDescription)}&attachment=${selectedFile.file}`;
+    window.location.href = mailtoLink;
+    closeModal();
   };
 
   return (
     <div className="relative flex flex-col min-h-screen bg-gray-100">
       <Header />
       <main className="container mx-auto p-6 pt-16 flex-grow">
-        <h1 className="text-4xl font-bold mt-6 mb-6 text-center text-blue-600">Gestion des Rapport</h1>
-        
+        <h1 className="text-4xl font-bold mt-6 mb-6 text-center text-blue-600">Gestion des Rapports</h1>
+
         <div className="flex flex-col items-center mb-8">
           <input
             type="file"
@@ -88,7 +106,7 @@ export default function UploadPage() {
             onChange={handleFileUpload}
           />
         </div>
-        
+
         {loading ? (
           <Spinner />
         ) : (
@@ -109,7 +127,7 @@ export default function UploadPage() {
                     </button>
                     <button
                       className="text-green-600 hover:text-green-800"
-                      onClick={() => handleFileSend(file.id)}
+                      onClick={() => openModal(file)}
                     >
                       <FaEnvelope size={20} />
                     </button>
@@ -127,6 +145,27 @@ export default function UploadPage() {
         )}
       </main>
       <Footer />
+
+      <Modal isOpen={isModalOpen} onRequestClose={closeModal} contentLabel="Envoyer un fichier">
+        <h2 className="text-lg font-semibold mb-4">Envoyer le fichier</h2>
+        <label className="block mb-2">Objet du mail:</label>
+        <input
+          type="text"
+          value={emailSubject}
+          onChange={(e) => setEmailSubject(e.target.value)}
+          className="w-full p-2 mb-4 border rounded"
+        />
+        <label className="block mb-2">Description du mail:</label>
+        <textarea
+          value={emailDescription}
+          onChange={(e) => setEmailDescription(e.target.value)}
+          className="w-full p-2 mb-4 border rounded"
+        />
+        <div className="mb-4">
+          <strong>Pièce jointe:</strong> {selectedFile?.file.split('/').pop()}
+        </div>
+        <button onClick={handleSendEmail} className="bg-blue-600 text-white px-4 py-2 rounded">Envoyer</button>
+      </Modal>
     </div>
   );
 }
