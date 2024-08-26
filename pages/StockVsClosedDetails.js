@@ -7,6 +7,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import html2canvas from 'html2canvas';
+import { uploadFile } from '../services/api';
 
 const fetchRegleData = async () => {
   const response = await fetch('https://tranquil-shelf-72645-6e0212cb96fc.herokuapp.com/dashboard/api/regle/');
@@ -32,6 +33,7 @@ const getLastThreeDaysData = (data) => {
 };
 
 const StockVsClosedDetails = () => {
+  const pageTitle = "StockVsClosedDetails"; // Définir le titre de la page ici
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [showDateFilter, setShowDateFilter] = useState(false);
@@ -74,56 +76,89 @@ const StockVsClosedDetails = () => {
   const handleDownload = (type) => {
     switch (type) {
       case 'csv':
-        // Implémentez la logique de téléchargement CSV ici
+        handleDownloadCSV();
         break;
       case 'xlsx':
-        // Implémentez la logique de téléchargement XLSX ici
+        handleDownloadXLSX();
         break;
       case 'pdf':
-        handleDownloadPDF();
+        generatePDF().then((pdf) => pdf.save(`${pageTitle}_${new Date().toISOString()}.pdf`));
         break;
       default:
         break;
     }
   };
 
-  const handleDownloadPDF = async () => {
+  const handleDownloadCSV = () => {
+    const csvData = filteredData.map(row => ({
+      Date: row.date,
+      Règle: row.regle,
+      'Nbr stock veille': row.nbr_stoc_veille ?? 0,
+      'Fermer hier': row.fermer_hier ?? 0,
+    }));
+
+    const csv = [
+      Object.keys(csvData[0]).join(','),
+      ...csvData.map(row => Object.values(row).join(',')),
+    ].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${pageTitle}_${new Date().toISOString()}.csv`);
+    link.click();
+  };
+
+  const handleDownloadXLSX = () => {
+    const worksheet = XLSX.utils.json_to_sheet(filteredData.map(row => ({
+      Date: row.date,
+      Règle: row.regle,
+      'Nbr stock veille': row.nbr_stoc_veille ?? 0,
+      'Fermer hier': row.fermer_hier ?? 0,
+    })));
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');
+    XLSX.writeFile(workbook, `${pageTitle}_${new Date().toISOString()}.xlsx`);
+  };
+
+  const generatePDF = async () => {
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 15;
     const contentWidth = pageWidth - margin * 2;
     let yOffset = margin;
-  
+
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.text(`Généré le : ${today}`, pageWidth - margin, yOffset, { align: 'right' });
     yOffset += 10;
-  
+
     doc.setFontSize(22);
     doc.setTextColor(0, 0, 128);
     doc.setFont('helvetica', 'bold');
     doc.text('Détails du Stock vs Sortants', pageWidth / 2, yOffset, { align: 'center' });
     yOffset += 15;
-  
+
     if (startDate && endDate) {
       doc.setFontSize(12);
       doc.setTextColor(0, 0, 0);
-      doc.setFont('helvetica', 'normal'); // Assurez-vous que la police est normale
+      doc.setFont('helvetica', 'normal'); 
       const duration = `(${Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24))} jours)`;
       doc.text(`Période: ${startDate} à ${endDate} ${duration}`, pageWidth / 2, yOffset, { align: 'center' });
       yOffset += 10;
     }
-    
-  
+
     doc.setDrawColor(200);
     doc.line(margin, yOffset, pageWidth - margin, yOffset);
     yOffset += 10;
-  
+
     for (let index = 0; index < topRules.length; index++) {
       const rule = topRules[index];
       const graphCanvas = graphRefs.current[index]?.querySelector('canvas');
-  
+
       if (graphCanvas) {
         const canvas = await html2canvas(graphCanvas, {
           backgroundColor: null,
@@ -131,51 +166,68 @@ const StockVsClosedDetails = () => {
         });
         const imgData = canvas.toDataURL('image/png');
         const imgHeight = (canvas.height * contentWidth) / canvas.width;
-  
+
         if (yOffset + imgHeight > pageHeight - margin) {
           doc.addPage();
           yOffset = margin;
         }
-  
+
         doc.setFontSize(16);
         doc.setTextColor(0, 0, 0);
         doc.setFont('helvetica', 'bold');
         doc.text(`Stock vs Sortants de la Règle ${rule}`, margin, yOffset);
         yOffset += 10;
-  
+
         doc.addImage(imgData, 'PNG', margin, yOffset, contentWidth, imgHeight);
         yOffset += imgHeight + 10;
       }
     }
-  
+
     doc.setDrawColor(200);
     doc.line(margin, yOffset, pageWidth - margin, yOffset);
     yOffset += 10;
-  
+
     const tableData = filteredData.map(row => [
       row.date,
       row.regle,
       row.nbr_stoc_veille ?? 0,
       row.fermer_hier ?? 0
     ]);
-  
+
     doc.autoTable({
       head: [['Date', 'Règle', 'Nbr stock veille', 'Fermer hier']],
       body: tableData,
       startY: yOffset + 10,
       theme: 'grid',
     });
-  
-    const fileName = `stock-vs-closed-details_${today}.pdf`;
-    doc.save(fileName);
+
+    return doc;
   };
-  
+
+  const onSaveReport = async () => {
+    try {
+      const pdf = await generatePDF();
+      const pdfBlob = pdf.output('blob');
+      const pdfFileName = `${pageTitle}_${new Date().toISOString()}.pdf`;
+
+      const pdfFile = new File([pdfBlob], pdfFileName, { type: 'application/pdf' });
+
+      await uploadFile(pdfFile);
+
+      alert('Rapport enregistré et uploadé avec succès.');
+    } catch (error) {
+      console.error('Erreur lors de l\'enregistrement du rapport:', error);
+      alert('Une erreur est survenue lors de l\'enregistrement du rapport.');
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       <Header 
         toggleDateFilter={() => setShowDateFilter(!showDateFilter)} 
-        onDownloadPDF={handleDownloadPDF} 
+        onGeneratePDF={generatePDF} 
+        onSaveReport={onSaveReport}
+        pageTitle={pageTitle}  
       />
       {showDateFilter && (
         <div className="fixed top-16 right-4 z-50">
@@ -259,7 +311,7 @@ const StockVsClosedDetails = () => {
                       >
                         <path
                           fillRule="evenodd"
-                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 111.414 1.414l-4 4a1 1 01-1.414 0l-4-4a1 1 010-1.414z"
+                          d="M5.293 7.293a1 1 011.414 0L10 10.586l3.293-3.293a1 1 111.414 1.414l-4 4a1 1 01-1.414 0l-4-4a1 1 010-1.414z"
                           clipRule="evenodd"
                         />
                       </svg>

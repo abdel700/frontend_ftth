@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { FaBars, FaSearch, FaBell, FaFilter, FaComment, FaDownload } from 'react-icons/fa';
 import Link from 'next/link';
 
-const Header = ({ toggleDateFilter, toggleCommentMode, onDownloadPDF }) => {
+const Header = ({ toggleDateFilter, toggleCommentMode, onGeneratePDF, onSaveReport, pageTitle }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const menuRef = useRef(null);
@@ -44,7 +44,7 @@ const Header = ({ toggleDateFilter, toggleCommentMode, onDownloadPDF }) => {
           <FaBars className="mr-4 cursor-pointer" onClick={toggleMenu} />
           <Link href="/dashboard">
             <span className="text-xl font-bold text-white cursor-pointer">
-              FTTH DASHBOARD
+              {'FTTH DASHBOARD'}
             </span>
           </Link>
         </div>
@@ -63,21 +63,34 @@ const Header = ({ toggleDateFilter, toggleCommentMode, onDownloadPDF }) => {
                 <ul className="py-1">
                   <li
                     className="block px-4 py-2 text-sm hover:bg-gray-200 cursor-pointer"
-                    onClick={() => {
+                    onClick={async () => {
                       setIsDropdownOpen(false);
-                      onDownloadPDF();  // Téléchargement PDF
-                    }}
-                  >
-                    Enregistrer un rapport
-                  </li>
-                  <li
-                    className="block px-4 py-2 text-sm hover:bg-gray-200 cursor-pointer"
-                    onClick={() => {
-                      setIsDropdownOpen(false);
-                      onDownloadPDF();  // Téléchargement PDF
+                      try {
+                        const pdf = await onGeneratePDF();
+                        const fileName = `${pageTitle || 'Rapport'}_${new Date().toISOString()}.pdf`;
+                        pdf.save(fileName);
+                      } catch (error) {
+                        console.error('Erreur lors du téléchargement du rapport:', error);
+                        alert('Une erreur est survenue lors du téléchargement du rapport.');
+                      }
                     }}
                   >
                     Télécharger un rapport
+                  </li>
+                  <li
+                    className="block px-4 py-2 text-sm hover:bg-gray-200 cursor-pointer"
+                    onClick={async () => {
+                      setIsDropdownOpen(false);
+                      try {
+                        await onSaveReport();
+                        alert('Rapport enregistré et uploadé avec succès.');
+                      } catch (error) {
+                        console.error('Erreur lors de l\'enregistrement du rapport:', error);
+                        alert('Une erreur est survenue lors de l\'enregistrement du rapport.');
+                      }
+                    }}
+                  >
+                    Enregistrer un rapport
                   </li>
                 </ul>
               </div>
@@ -96,13 +109,13 @@ const Header = ({ toggleDateFilter, toggleCommentMode, onDownloadPDF }) => {
           <h2 className="text-xl font-bold mb-4">Menu</h2>
           <ul>
             <li className="mb-2">
-              <a href="#">Page 1</a>
+              <a href="/UploadPage">Gestion des Rapport</a>
             </li>
             <li className="mb-2">
-              <a href="#">Page 2</a>
+              <a href="/UploadPage">Envoyer des Rapport</a>
             </li>
             <li className="mb-2">
-              <a href="#">Page 3</a>
+              <a href="#">Guide</a>
             </li>
           </ul>
         </div>

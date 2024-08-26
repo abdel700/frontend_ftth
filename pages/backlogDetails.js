@@ -13,13 +13,12 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { fetchStockData } from '../services/api';
+import { fetchStockData, uploadFile } from '../services/api';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import html2canvas from 'html2canvas';
 
-// Enregistrer les composants de Chart.js
 ChartJS.register(
   LineElement,
   PointElement,
@@ -31,6 +30,10 @@ ChartJS.register(
 );
 
 const BacklogDetails = () => {
+  useEffect(() => {
+    document.title = "Détails du Backlog"; // Définit le titre de la page
+  }, []);
+
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [showDateFilter, setShowDateFilter] = useState(false);
@@ -120,19 +123,7 @@ const BacklogDetails = () => {
     },
   };
 
-  const handleDownload = (format) => {
-    if (format === 'pdf') {
-      handleDownloadPDF();
-    } else if (format === 'csv') {
-      // Logique pour télécharger en CSV
-      console.log('Télécharger CSV');
-    } else if (format === 'xlsx') {
-      // Logique pour télécharger en XLSX
-      console.log('Télécharger XLSX');
-    }
-  };
-
-  const handleDownloadPDF = async () => {
+  const generatePDF = async () => {
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
@@ -214,13 +205,34 @@ const BacklogDetails = () => {
       theme: 'grid',
     });
 
-    const fileName = `backlog-details_${today}.pdf`;
-    doc.save(fileName);
+    return doc;
+  };
+
+  const onSaveReport = async () => {
+    try {
+      const pdf = await generatePDF();
+      const pdfBlob = pdf.output('blob');
+      const pdfFileName = `backlog-details_${new Date().toISOString()}.pdf`;
+
+      const pdfFile = new File([pdfBlob], pdfFileName, { type: 'application/pdf' });
+
+      await uploadFile(pdfFile);
+
+      alert('Rapport enregistré et uploadé avec succès.');
+    } catch (error) {
+      console.error('Erreur lors de l\'enregistrement du rapport:', error);
+      alert('Une erreur est survenue lors de l\'enregistrement du rapport.');
+    }
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
-      <Header toggleDateFilter={() => setShowDateFilter(!showDateFilter)} onDownloadPDF={handleDownloadPDF} />
+      <Header 
+        toggleDateFilter={() => setShowDateFilter(!showDateFilter)} 
+        onGeneratePDF={generatePDF} 
+        onSaveReport={onSaveReport} 
+        pageTitle="BacklogDetails"  // Nom de la page passée ici
+      />
       {showDateFilter && (
         <div className="fixed top-16 right-4 z-50">
           <DateFilters setStartDate={setStartDate} setEndDate={setEndDate} closeFilter={() => setShowDateFilter(false)} />

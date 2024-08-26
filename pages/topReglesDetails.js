@@ -3,7 +3,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import DateFilters from '../components/DateFilters';
 import TopRuleGraph from '../components/TopRuleGraph';
-import { fetchRegleData } from '../services/api';
+import { fetchRegleData, uploadFile } from '../services/api'; // Assurez-vous que uploadFile est importé ici
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -87,35 +87,30 @@ const TopReglesDetails = () => {
     const contentWidth = pageWidth - margin * 2;
     let yOffset = margin;
 
-    // Ajouter la date de génération du rapport
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.text(`Généré le : ${today}`, pageWidth - margin, yOffset, { align: 'right' });
     yOffset += 10;
 
-// Add Report Title and Date Range Information
-doc.setFontSize(22);
-doc.setTextColor(0, 0, 128);
-doc.setFont('helvetica', 'bold');
-doc.text('Détails du Top 5 Règles', pageWidth / 2, yOffset, { align: 'center' });
-yOffset += 15;
+    doc.setFontSize(22);
+    doc.setTextColor(0, 0, 128);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Détails du Top 5 Règles', pageWidth / 2, yOffset, { align: 'center' });
+    yOffset += 15;
 
-if (startDate && endDate) {
-    doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
-    doc.setFont('helvetica', 'normal');
-    const duration = `(${Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24))} jours)`;
-    doc.text(`Période: ${startDate} à ${endDate} ${duration}`, pageWidth / 2, yOffset, { align: 'center' });
-    yOffset += 10;
-}
+    if (startDate && endDate) {
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('helvetica', 'normal');
+      const duration = `(${Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24))} jours)`;
+      doc.text(`Période: ${startDate} à ${endDate} ${duration}`, pageWidth / 2, yOffset, { align: 'center' });
+      yOffset += 10;
+    }
 
-
-    // Ajouter une ligne séparatrice horizontale
     doc.setDrawColor(200);
     doc.line(margin, yOffset, pageWidth - margin, yOffset);
     yOffset += 10;
 
-    // Ajouter les graphes des règles
     for (let index = 0; index < topRules.length; index++) {
       const rule = topRules[index];
       const graphCanvas = graphRefs.current[index]?.querySelector('canvas');
@@ -128,7 +123,6 @@ if (startDate && endDate) {
         const imgData = canvas.toDataURL('image/png');
         const imgHeight = (canvas.height * contentWidth) / canvas.width;
 
-        // Vérifier si l'image rentre sur la page actuelle, sinon ajouter une nouvelle page
         if (yOffset + imgHeight > pageHeight - margin) {
           doc.addPage();
           yOffset = margin;
@@ -137,7 +131,7 @@ if (startDate && endDate) {
         doc.setFontSize(16);
         doc.setTextColor(0, 0, 128);
         doc.setFont('helvetica', 'bold');
-        doc.text(`Détails de la règle ${rule}`, margin, yOffset); // Aligner à gauche
+        doc.text(`Détails de la règle ${rule}`, margin, yOffset); 
         yOffset += 10;
 
         doc.addImage(imgData, 'PNG', margin, yOffset, contentWidth, imgHeight);
@@ -145,12 +139,10 @@ if (startDate && endDate) {
       }
     }
 
-    // Ajouter une ligne séparatrice horizontale avant le tableau
     doc.setDrawColor(200);
     doc.line(margin, yOffset, pageWidth - margin, yOffset);
     yOffset += 10;
 
-    // Ajouter les données du tableau
     const tableData = filteredData.map(row => [row.date, row.regle, row.nbr_stoc_du_jour]);
     doc.autoTable({
       head: [['Date', 'Règle', 'Stock']],
@@ -159,15 +151,33 @@ if (startDate && endDate) {
       theme: 'grid',
     });
 
-    const fileName = `top-regles-details_${today}.pdf`;
-    doc.save(fileName);
+    return doc;
+  };
+
+  const handleSaveReport = async () => {
+    try {
+      const pdf = await handleDownloadPDF();
+      const pdfBlob = pdf.output('blob');
+      const pdfFileName = `top-regles-details_${new Date().toISOString()}.pdf`;
+
+      const pdfFile = new File([pdfBlob], pdfFileName, { type: 'application/pdf' });
+
+      await uploadFile(pdfFile);
+
+      alert('Rapport enregistré et uploadé avec succès.');
+    } catch (error) {
+      console.error('Erreur lors de l\'enregistrement du rapport:', error);
+      alert('Une erreur est survenue lors de l\'enregistrement du rapport.');
+    }
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       <Header
         toggleDateFilter={() => setShowDateFilter(!showDateFilter)}
-        onDownloadPDF={handleDownloadPDF}
+        onGeneratePDF={handleDownloadPDF}
+        onSaveReport={handleSaveReport}
+        pageTitle="Top Règles Details"
       />
       {showDateFilter && (
         <div className="fixed top-16 right-4 z-50">
@@ -186,9 +196,13 @@ if (startDate && endDate) {
           ) : (
             <>
               <div className="mb-6 flex flex-col md:flex-row justify-between items-center w-full max-w-6xl mx-auto">
-                <span className="text-lg font-medium">{startDate && endDate ? `De : ${startDate} À : ${endDate}` : `Date du jour : ${today}`}</span>
+                <span className="text-lg font-medium">
+                  {startDate && endDate ? `De : ${startDate} À : ${endDate}` : `Date du jour : ${today}`}
+                </span>
                 {startDate && endDate && (
-                  <span className="text-lg font-medium mt-4 md:mt-0">Durée : {Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24))} jours</span>
+                  <span className="text-lg font-medium mt-4 md:mt-0">
+                    Durée : {Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24))} jours
+                  </span>
                 )}
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full max-w-6xl mx-auto">
@@ -259,23 +273,16 @@ if (startDate && endDate) {
                         <a
                           href="#"
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => handleDownload('csv')}
-                        >
-                          CSV
-                        </a>
-                        <a
-                          href="#"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => handleDownload('xlsx')}
-                        >
-                          XLSX
-                        </a>
-                        <a
-                          href="#"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => handleDownloadPDF()}  // Update to match the new function name
+                          onClick={() => handleDownloadPDF()}
                         >
                           PDF
+                        </a>
+                        <a
+                          href="#"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={handleSaveReport}
+                        >
+                          Enregistrer un rapport
                         </a>
                       </div>
                     </div>
