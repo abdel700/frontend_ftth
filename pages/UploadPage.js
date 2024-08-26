@@ -86,9 +86,40 @@ export default function UploadPage() {
     setEmailDescription('');
   };
 
+  const openMailServicePage = () => {
+    if (typeof window !== "undefined") {
+      const popup = window.open('', '_blank', 'width=400,height=400');
+      popup.document.write(`
+        <html>
+        <head><title>Choisissez un service de messagerie</title></head>
+        <body>
+          <h3>Choisissez un service de messagerie</h3>
+          <ul>
+            <li><a href="#" onclick="window.opener.sendWithGmail(); window.close(); return false;">Gmail</a></li>
+            <li><a href="#" onclick="window.opener.sendWithOutlook(); window.close(); return false;">Outlook</a></li>
+          </ul>
+        </body>
+        </html>
+      `);
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.sendWithGmail = function () {
+        const mailtoLink = `https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailDescription)}&tf=1`;
+        window.open(mailtoLink, '_blank');
+      };
+
+      window.sendWithOutlook = function () {
+        const mailtoLink = `https://outlook.live.com/owa/?path=/mail/action/compose&subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailDescription)}`;
+        window.open(mailtoLink, '_blank');
+      };
+    }
+  }, [emailSubject, emailDescription]);
+
   const handleSendEmail = () => {
-    const mailtoLink = `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailDescription)}&attachment=${selectedFile.file}`;
-    window.location.href = mailtoLink;
+    openMailServicePage();
     closeModal();
   };
 
