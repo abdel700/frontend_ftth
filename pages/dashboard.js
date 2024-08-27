@@ -465,6 +465,12 @@ export default function Dashboard() {
               )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 w-full">
+            <StatCard
+                title="Backlog FTTH J-1"
+                value={backlogJ1Today}
+                description={backlogJ1DifferenceText}
+                className="hover:shadow-lg transition-shadow duration-300 ease-in-out"
+              />
               <StatCard
                 title="Backlog FTTH J"
                 value={backlogToday}
@@ -478,12 +484,6 @@ export default function Dashboard() {
                   1
                 )}% de commandes non traitées`}
                 isObjective={true}
-                className="hover:shadow-lg transition-shadow duration-300 ease-in-out"
-              />
-              <StatCard
-                title="Backlog FTTH J-1"
-                value={backlogJ1Today}
-                description={backlogJ1DifferenceText}
                 className="hover:shadow-lg transition-shadow duration-300 ease-in-out"
               />
               <StatCard

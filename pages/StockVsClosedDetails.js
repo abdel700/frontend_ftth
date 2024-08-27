@@ -139,7 +139,7 @@ const StockVsClosedDetails = () => {
     doc.setFontSize(22);
     doc.setTextColor(0, 0, 128);
     doc.setFont('helvetica', 'bold');
-    doc.text('Détails du Stock vs Sortants', pageWidth / 2, yOffset, { align: 'center' });
+    doc.text('Détails des Entrants vs Sortants', pageWidth / 2, yOffset, { align: 'center' });
     yOffset += 15;
 
     if (startDate && endDate) {
@@ -175,7 +175,7 @@ const StockVsClosedDetails = () => {
         doc.setFontSize(16);
         doc.setTextColor(0, 0, 0);
         doc.setFont('helvetica', 'bold');
-        doc.text(`Stock vs Sortants de la Règle ${rule}`, margin, yOffset);
+        doc.text(`Entrants vs Sortants de la Règle ${rule}`, margin, yOffset);
         yOffset += 10;
 
         doc.addImage(imgData, 'PNG', margin, yOffset, contentWidth, imgHeight);
@@ -236,7 +236,7 @@ const StockVsClosedDetails = () => {
       )}
       <main className="container mx-auto p-6 pt-16 flex-grow transition-all duration-300 ease-in-out">
         <div className="flex flex-col items-center">
-          <h1 className="text-3xl md:text-4xl font-bold mt-6 mb-6 text-center text-blue-600">Détails du Stock vs Sortants</h1>
+          <h1 className="text-3xl md:text-4xl font-bold mt-6 mb-6 text-center text-blue-600">Détails des Entrants vs Sortants</h1>
           {loading ? (
             <div className="spinner-container">
               <div className="spinner">

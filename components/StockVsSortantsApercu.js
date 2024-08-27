@@ -125,7 +125,7 @@ const StockVsSortantsApercu = ({ startDate, endDate }) => {
 
   return (
     <div className="card p-6 bg-white shadow-md rounded-lg w-full hover:shadow-lg transition-shadow duration-300 ease-in-out">
-      <h2 className="text-2xl font-bold mb-4 text-blue-600">Stock vs Sortants (Aperçu)</h2>
+      <h2 className="text-2xl font-bold mb-4 text-blue-600">Entrants vs Sortants (Aperçu)</h2>
       <div style={{ position: 'relative', height: '400px' }}>
         <Bar data={chartData} options={options} width={800} height={400} />
       </div>

@@ -91,7 +91,45 @@ export default function UploadPage() {
       const popup = window.open('', '_blank', 'width=400,height=400');
       popup.document.write(`
         <html>
-        <head><title>Choisissez un service de messagerie</title></head>
+        <head>
+          <title>Choisissez un service de messagerie</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              height: 100vh;
+              margin: 0;
+              background-color: #f4f4f4;
+            }
+            h3 {
+              margin-bottom: 20px;
+            }
+            ul {
+              list-style-type: none;
+              padding: 0;
+            }
+            li {
+              margin: 10px 0;
+            }
+            a {
+              text-decoration: none;
+              color: #007BFF;
+              font-weight: bold;
+              padding: 10px 20px;
+              background-color: #fff;
+              border-radius: 5px;
+              border: 1px solid #007BFF;
+              transition: background-color 0.3s ease;
+            }
+            a:hover {
+              background-color: #007BFF;
+              color: #fff;
+            }
+          </style>
+        </head>
         <body>
           <h3>Choisissez un service de messagerie</h3>
           <ul>
@@ -107,16 +145,18 @@ export default function UploadPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       window.sendWithGmail = function () {
-        const mailtoLink = `https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailDescription)}&tf=1`;
-        window.open(mailtoLink, '_blank');
+        const mailtoLink = `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailDescription)}`;
+        window.location.href = mailtoLink;
       };
-
+  
       window.sendWithOutlook = function () {
-        const mailtoLink = `https://outlook.live.com/owa/?path=/mail/action/compose&subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailDescription)}`;
-        window.open(mailtoLink, '_blank');
+        const mailtoLink = `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailDescription)}`;
+        window.location.href = mailtoLink;
       };
     }
   }, [emailSubject, emailDescription]);
+  
+  
 
   const handleSendEmail = () => {
     openMailServicePage();
