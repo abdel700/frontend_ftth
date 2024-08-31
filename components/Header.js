@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { FaBars, FaSearch, FaBell, FaFilter, FaComment, FaDownload, FaUserCircle } from 'react-icons/fa';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import axiosInstance from '../utils/axios'; // Assurez-vous que ce chemin correspond à l'endroit où votre axiosInstance est défini
+import axiosInstance from '../utils/axios';
 
 const Header = ({ toggleDateFilter, toggleCommentMode, onGeneratePDF, onSaveReport, pageTitle }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -62,12 +62,15 @@ const Header = ({ toggleDateFilter, toggleCommentMode, onGeneratePDF, onSaveRepo
           setUser(response.data);
         } catch (error) {
           console.error('Failed to fetch user data:', error);
+          router.push('/login'); // Redirect to login if token is invalid
         }
+      } else {
+        router.push('/login'); // Redirect to login if not logged in
       }
     };
 
     fetchUserData();
-  }, []);
+  }, [router]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -131,30 +134,26 @@ const Header = ({ toggleDateFilter, toggleCommentMode, onGeneratePDF, onSaveRepo
               </div>
             )}
           </div>
-          <div className="relative">
-            <FaUserCircle className="ml-4 cursor-pointer text-white" onClick={toggleUserPopup} title="Compte Utilisateur" />
-            {isUserPopupOpen && (
-              <div
-                ref={userPopupRef}
-                className="absolute right-0 mt-2 w-56 bg-white text-black rounded-md shadow-lg z-50 p-4"
-              >
-                {user ? (
-                  <>
-                    <p className="text-lg font-semibold">{user.first_name} {user.last_name}</p>
-                    <p className="text-sm text-gray-600">{user.email}</p>
-                    <button
-                      onClick={handleLogout}
-                      className="mt-4 w-full bg-red-500 text-white py-2 rounded hover:bg-red-700 transition duration-300"
-                    >
-                      Se Déconnecter
-                    </button>
-                  </>
-                ) : (
-                  <p>Chargement...</p>
-                )}
-              </div>
-            )}
-          </div>
+          {user && (
+            <div className="relative">
+              <FaUserCircle className="ml-4 cursor-pointer text-white" onClick={toggleUserPopup} title="Compte Utilisateur" />
+              {isUserPopupOpen && (
+                <div
+                  ref={userPopupRef}
+                  className="absolute right-0 mt-2 w-56 bg-white text-black rounded-md shadow-lg z-50 p-4"
+                >
+                  <p className="text-lg font-semibold">{user.first_name} {user.last_name}</p>
+                  <p className="text-sm text-gray-600">{user.email}</p>
+                  <button
+                    onClick={handleLogout}
+                    className="mt-4 w-full bg-red-500 text-white py-2 rounded hover:bg-red-700 transition duration-300"
+                  >
+                    Se Déconnecter
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </header>
 
