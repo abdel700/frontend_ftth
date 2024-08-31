@@ -30,9 +30,17 @@ export default function IndexPage() {
             setUser(response.data);
           }
         } catch (error) {
-          console.error('Failed to fetch user data:', error);
-          setError('Failed to fetch user data.');
-          router.push('/login');
+          if (error.response && error.response.status === 401) {
+            // If unauthorized, redirect to login
+            router.push('/login');
+          } else {
+            // For other errors, log the error (optional) and show a message
+            console.error('Failed to fetch user data:', error);
+            setError('Failed to fetch user data.');
+            setTimeout(() => {
+              router.push('/login');
+            }, 3000); // Redirect after showing error message
+          }
         }
       }
     };
