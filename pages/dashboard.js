@@ -146,13 +146,17 @@ export default function Dashboard() {
 
     if (!commentMode) return;
 
-    if (selectedTool === 'comment') {
+    if (selectedTool === 'commentYellow' || selectedTool === 'commentGreen' || selectedTool === 'commentRed') {
+      const color = selectedTool === 'commentYellow' ? 'yellow' : selectedTool === 'commentGreen' ? 'green' : 'red';
+      const textColor = selectedTool === 'commentYellow' ? 'black' : 'white';
       const newElement = {
         id: Date.now(),
         type: 'comment',
         x: e.clientX + scrollX,
         y: e.clientY + scrollY,
         content: 'Ajouter un commentaire',
+        color,  // Use the color from the selected tool
+        textColor,  // Set the text color based on the selected color
         isEditing: false,
       };
       setElements([...elements, newElement]);
@@ -225,7 +229,7 @@ export default function Dashboard() {
         const parsedData = JSON.parse(data);
         const { id, startX, startY, offsetX, offsetY } = parsedData;
         const newX = startX + (e.clientX - offsetX);
-        const newY = startY + (e.clientY - offsetY);
+        const newY = startY + (offsetY - e.clientY);
 
         const updatedElements = elements.map((el) =>
           el.id === id ? { ...el, x: newX, y: newY } : el
@@ -543,10 +547,10 @@ export default function Dashboard() {
           position: 'absolute',
           top: el.y,
           left: el.x,
-          backgroundColor: el.type === 'comment' ? 'yellow' : 'transparent',
+          backgroundColor: el.color, // Set background color based on selected color
           padding: el.type === 'comment' ? '5px' : '0',
           fontSize: el.type === 'arrow' ? `${el.size}px` : '14px',
-          color: el.type === 'arrow' ? 'red' : 'black',
+          color: el.textColor, // Set text color based on selected color
           cursor:
             selectedTool === 'erase' && commentMode
               ? 'not-allowed'
@@ -559,18 +563,24 @@ export default function Dashboard() {
         onDragStart={(e) => handleDragStart(el.id, e)}
         onDoubleClick={() => handleDoubleClick(index)}
       >
-        {el.isEditing ? (
-          <input
-            type="text"
-            value={el.content}
-            onChange={(e) => handleTextChange(e, el.id)}
-            onBlur={() => handleBlur(el.id)}
-            onKeyDown={(e) => handleKeyDown(e, el.id)}
-            autoFocus
-          />
-        ) : (
-          el.content
-        )}
+{el.isEditing ? (
+  <input
+    type="text"
+    value={el.content}
+    onChange={(e) => handleTextChange(e, el.id)}
+    onBlur={() => handleBlur(el.id)}
+    onKeyDown={(e) => handleKeyDown(e, el.id)}
+    autoFocus
+    style={{
+      color: 'black', // Always set text color to black during modification
+      backgroundColor: 'white', // Set background color to white during modification
+      borderColor: el.color === 'yellow' ? 'blue' : 'red', // Optionally, you can customize the border color
+    }}
+  />
+) : (
+  el.content
+)}
+
         {el.type === 'arrow' && (
           <>
             <div
@@ -600,33 +610,39 @@ export default function Dashboard() {
             ></div>
           </>
         )}
-        {selectedElement === index && !el.isEditing && (
-          <div
-            style={{
-              position: 'absolute',
-              top: '-30px',
-              left: '0',
-              backgroundColor: 'white',
-              border: '1px solid #ccc',
-              padding: '5px',
-              borderRadius: '5px',
-              zIndex: 1000,
-            }}
-          >
-            <button
-              style={{ marginRight: '5px' }}
-              onClick={() => handleModify(el.id)}
-            >
-              Modifier
-            </button>
-            <button
-              style={{ color: 'red' }}
-              onClick={() => handleDelete(el.id)}
-            >
-              Supprimer
-            </button>
-          </div>
-        )}
+{selectedElement === index && !el.isEditing && (
+  <div
+    style={{
+      position: 'absolute',
+      top: '-30px',
+      left: '0',
+      backgroundColor: 'white',
+      border: '1px solid #ccc',
+      padding: '5px',
+      borderRadius: '5px',
+      zIndex: 1000,
+    }}
+  >
+    <button
+      style={{
+        marginRight: '5px',
+        color: 'black', // Ensure the Modifier button text is black
+      }}
+      onClick={() => handleModify(el.id)}
+    >
+      Modifier
+    </button>
+    <button
+      style={{
+        color: 'red', // Ensure the Supprimer button text is red
+      }}
+      onClick={() => handleDelete(el.id)}
+    >
+      Supprimer
+    </button>
+  </div>
+)}
+
       </div>
     ))}
 
@@ -636,7 +652,7 @@ export default function Dashboard() {
         <div className="fixed inset-0 bg-transparent z-40"></div>
 
         <CommentPalette
-          onAddComment={() => setSelectedTool('comment')}
+          onAddComment={(color) => setSelectedTool(color)} // Pass color selection to handleDashboardClick
           onArrowClick={() => setSelectedTool('arrow')}
         />
 

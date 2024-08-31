@@ -51,7 +51,6 @@ const Header = ({ toggleDateFilter, toggleCommentMode, onGeneratePDF, onSaveRepo
   }, [isMenuOpen, isDropdownOpen, isUserPopupOpen]);
 
   useEffect(() => {
-    // Fetch user data on mount
     const fetchUserData = async () => {
       const token = localStorage.getItem('token');
       if (token) {

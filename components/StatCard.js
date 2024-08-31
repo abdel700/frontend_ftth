@@ -12,15 +12,16 @@ const StatCard = ({ title, value, description, isObjective }) => {
     }
   }, [isObjective]);
 
-  // Set the max threshold for the gauge
-  const maxNonTreatedOrders = 400;
+  // Set the fixed value for the large number
+  const fixedObjectiveValue = 400;
+  const maxNonTreatedOrders = fixedObjectiveValue;
 
   return (
     <div className="p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out">
       <h2 className="text-xl font-bold text-blue-600 mb-2">{title}</h2>
       {isObjective && GaugeChart ? (
         <div className="flex flex-col items-center">
-          <div className="text-3xl font-bold mb-2 self-start">{value}</div>
+          <div className="text-3xl font-bold mb-2 self-start">{fixedObjectiveValue}</div>
           <GaugeChart
             id="gauge-chart"
             nrOfLevels={30}
@@ -34,7 +35,7 @@ const StatCard = ({ title, value, description, isObjective }) => {
           />
     
           <div className="mt-4 text-center text-sm font-medium">
-            {`${value} commandes non traitées`}
+            {`${value} commandes`} {/* Updated small text */}
           </div>
         </div>
       ) : (

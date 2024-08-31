@@ -144,18 +144,6 @@ const ManualBreakdown = ({ startDate, endDate }) => {
     ],
   };
 
-  const chartData3 = {
-    labels: ['Vert', 'Rouge', 'Orange'],
-    datasets: [
-      {
-        label: 'Couleur',
-        data: [30.3, 45.6, 24.1],
-        backgroundColor: ['#4BC0C0', '#FF6384', '#FFCE56'],
-        hoverBackgroundColor: ['#4BC0C0', '#FF6384', '#FFCE56'],
-      },
-    ],
-  };
-
   const options2 = {
     responsive: true,
     maintainAspectRatio: false,
@@ -170,23 +158,17 @@ const ManualBreakdown = ({ startDate, endDate }) => {
     <div className="p-6 bg-white shadow-md rounded-lg w-full hover:shadow-lg transition-shadow duration-300 ease-in-out">
       <h2 className="text-2xl font-bold mb-4 text-blue-600 text-center">Répartition Manuelle</h2>
       <div className="flex flex-wrap justify-around">
-        <div className="flex flex-col items-center w-full md:w-1/3">
+        <div className="flex flex-col items-center w-full md:w-1/2"> {/* Adjusted width */}
           <div className="w-full h-64">
             <Doughnut data={chartData} options={options} />
           </div>
           <span className="text-center text-gray-700 mt-2">Acteur</span>
         </div>
-        <div className="flex flex-col items-center w-full md:w-1/3">
+        <div className="flex flex-col items-center w-full md:w-1/2"> {/* Adjusted width */}
           <div className="w-full h-64">
             <Doughnut data={chartData2} options={options2} />
           </div>
           <span className="text-center text-gray-700 mt-2">Manuel</span>
-        </div>
-        <div className="flex flex-col items-center w-full md:w-1/3">
-          <div className="w-full h-64">
-            <Doughnut data={chartData3} options={options2} />
-          </div>
-          <span className="text-center text-gray-700 mt-2">Couleur</span>
         </div>
       </div>
     </div>

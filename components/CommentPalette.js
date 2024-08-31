@@ -12,7 +12,6 @@ const CommentPalette = ({ onAddComment, onArrowClick }) => {
     const palette = paletteRef.current;
     const rect = palette.getBoundingClientRect();
 
-    // Calcul de l'offset pour maintenir la position relative de la souris
     offset.current = {
       x: e.clientX - rect.left,
       y: e.clientY - rect.top,
@@ -27,7 +26,6 @@ const CommentPalette = ({ onAddComment, onArrowClick }) => {
   const handleMouseMove = (e) => {
     if (!isDragging.current) return;
 
-    // Mise à jour de la position en tenant compte de l'offset
     setPosition({
       x: e.clientX - offset.current.x,
       y: e.clientY - offset.current.y,
@@ -46,7 +44,6 @@ const CommentPalette = ({ onAddComment, onArrowClick }) => {
       className="fixed bg-gray-800 text-white rounded-lg shadow-lg"
       style={{ top: position.y, left: position.x, zIndex: 1000 }}
     >
-      {/* Barre de déplacement */}
       <div
         ref={dragRef}
         className="flex items-center justify-center bg-gray-700 p-2 cursor-move"
@@ -55,9 +52,28 @@ const CommentPalette = ({ onAddComment, onArrowClick }) => {
         <FaGripLines />
       </div>
 
-      {/* Contenu de la palette */}
       <div className="flex flex-col items-center p-3 space-y-4">
-        <FaCommentDots size={24} className="cursor-pointer" onClick={onAddComment} title="Ajouter un commentaire" />
+        <FaCommentDots
+          size={24}
+          className="cursor-pointer"
+          onClick={() => onAddComment('commentYellow')}
+          title="Ajouter un commentaire (jaune)"
+          style={{ color: 'yellow' }}
+        />
+        <FaCommentDots
+          size={24}
+          className="cursor-pointer"
+          onClick={() => onAddComment('commentGreen')}
+          title="Ajouter un commentaire (vert)"
+          style={{ color: 'green' }}
+        />
+        <FaCommentDots
+          size={24}
+          className="cursor-pointer"
+          onClick={() => onAddComment('commentRed')}
+          title="Ajouter un commentaire (rouge)"
+          style={{ color: 'red' }}
+        />
         <FaArrowRight size={24} className="cursor-pointer" onClick={onArrowClick} title="Outil de flèche" />
       </div>
     </div>

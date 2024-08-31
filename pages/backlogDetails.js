@@ -18,6 +18,8 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import html2canvas from 'html2canvas';
+import { FaTimes } from 'react-icons/fa';
+import CommentPalette from '../components/CommentPalette';
 
 ChartJS.register(
   LineElement,
@@ -40,6 +42,12 @@ const BacklogDetails = () => {
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [commentMode, setCommentMode] = useState(false);
+  const [selectedTool, setSelectedTool] = useState(null);
+  const [elements, setElements] = useState([]);
+  const [selectedElement, setSelectedElement] = useState(null);
+  const [draggingHandle, setDraggingHandle] = useState(null);
+
   const graphRefs = useRef([]);
   const dropdownRef = useRef(null);
   const today = new Date().toLocaleString('fr-FR', { dateStyle: 'short' });
@@ -121,6 +129,144 @@ const BacklogDetails = () => {
         beginAtZero: true,
       },
     },
+  };
+
+  const toggleCommentMode = () => {
+    setCommentMode(!commentMode);
+    setSelectedTool(null);
+  };
+
+  const handleDashboardClick = (e) => {
+    const scrollX = window.scrollX || document.documentElement.scrollLeft;
+    const scrollY = window.scrollY || document.documentElement.scrollTop;
+
+    if (!commentMode) return;
+
+    if (selectedTool === 'commentYellow' || selectedTool === 'commentGreen' || selectedTool === 'commentRed') {
+      const color = selectedTool === 'commentYellow' ? 'yellow' : selectedTool === 'commentGreen' ? 'green' : 'red';
+      const textColor = selectedTool === 'commentYellow' ? 'black' : 'white';
+      const newElement = {
+        id: Date.now(),
+        type: 'comment',
+        x: e.clientX + scrollX,
+        y: e.clientY + scrollY,
+        content: 'Ajouter un commentaire',
+        color,  // Use the color from the selected tool
+        textColor,  // Set the text color based on the selected color
+        isEditing: false,
+      };
+      setElements([...elements, newElement]);
+      setSelectedTool(null);
+    } else if (selectedTool === 'arrow') {
+      const newElement = {
+        id: Date.now(),
+        type: 'arrow',
+        x: e.clientX + scrollX,
+        y: e.clientY + scrollY,
+        content: '→',
+        size: 24,
+        rotation: 0,
+      };
+      setElements([...elements, newElement]);
+      setSelectedTool(null);
+    }
+  };
+
+  const handleDoubleClick = (index) => {
+    if (!elements[index].isEditing) {
+      setSelectedElement(index);
+    }
+  };
+
+  const handleTextChange = (e, id) => {
+    setElements(elements.map((el) => (el.id === id ? { ...el, content: e.target.value } : el)));
+  };
+
+  const handleBlur = (id) => {
+    setElements(elements.map((el) => (el.id === id ? { ...el, isEditing: false } : el)));
+    setSelectedElement(null);
+  };
+
+  const handleKeyDown = (e, id) => {
+    if (e.key === 'Enter') {
+      handleBlur(id);
+    }
+  };
+
+  const handleElementClick = (id) => {
+    if (commentMode && selectedTool === 'erase') {
+      setElements(prevElements => prevElements.filter((el) => el.id !== id));
+    }
+  };
+
+  const handleModify = (id) => {
+    setElements(elements.map((el) => (el.id === id ? { ...el, isEditing: true } : el)));
+    setSelectedElement(null);
+  };
+
+  const handleDelete = (id) => {
+    setElements(prevElements => prevElements.filter((el) => el.id !== id));
+    setSelectedElement(null);
+  };
+
+  const handleDragStart = (id, e) => {
+    const element = elements.find(el => el.id === id);
+    e.dataTransfer.setData('text/plain', JSON.stringify({ id, startX: element.x, startY: element.y, offsetX: e.clientX, offsetY: e.clientY }));
+  };
+
+  const handleDrop = (e) => {
+    try {
+      const data = e.dataTransfer.getData('text/plain');
+      if (data) {
+        const parsedData = JSON.parse(data);
+        const { id, startX, startY, offsetX, offsetY } = parsedData;
+        const newX = startX + (e.clientX - offsetX);
+        const newY = startY + (offsetY - e.clientY);
+
+        const updatedElements = elements.map((el) =>
+          el.id === id ? { ...el, x: newX, y: newY } : el
+        );
+        setElements(updatedElements);
+      }
+    } catch (error) {
+      console.error('Erreur lors du déplacement de l\'élément:', error);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const startResizingOrRotating = (handle, index, e) => {
+    setDraggingHandle({ handle, index });
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', stopResizingOrRotating);
+  };
+
+  const stopResizingOrRotating = () => {
+    setDraggingHandle(null);
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', stopResizingOrRotating);
+  };
+
+  const onMouseMove = (e) => {
+    if (!draggingHandle) return;
+
+    const { handle, index } = draggingHandle;
+    const element = elements[index];
+    const centerX = element.x + 12;
+    const centerY = element.y + 12;
+
+    const deltaX = e.clientX - centerX;
+    const deltaY = e.clientY - centerY;
+
+    if (handle === 'resize') {
+      const newSize = Math.max(10, Math.sqrt(deltaX * deltaX + deltaY * deltaY));
+      setElements(elements.map((el, i) => i === index ? { ...el, size: newSize } : el));
+    } else if (handle === 'rotate') {
+      const newRotation = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
+      setElements(elements.map((el, i) => i === index ? { ...el, rotation: newRotation } : el));
+    }
   };
 
   const generatePDF = async () => {
@@ -226,16 +372,27 @@ const BacklogDetails = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100">
-      <Header 
-        toggleDateFilter={() => setShowDateFilter(!showDateFilter)} 
-        onGeneratePDF={generatePDF} 
-        onSaveReport={onSaveReport} 
-        pageTitle="BacklogDetails"  // Nom de la page passée ici
+    <div
+      id="backlogDetails"
+      className="relative flex flex-col min-h-screen bg-gray-100"
+      onClick={handleDashboardClick}
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+    >
+      <Header
+        toggleDateFilter={() => setShowDateFilter(!showDateFilter)}
+        toggleCommentMode={toggleCommentMode}
+        onGeneratePDF={generatePDF}
+        onSaveReport={onSaveReport}
+        pageTitle="BacklogDetails"
       />
       {showDateFilter && (
         <div className="fixed top-16 right-4 z-50">
-          <DateFilters setStartDate={setStartDate} setEndDate={setEndDate} closeFilter={() => setShowDateFilter(false)} />
+          <DateFilters
+            setStartDate={setStartDate}
+            setEndDate={setEndDate}
+            closeFilter={() => setShowDateFilter(false)}
+          />
         </div>
       )}
       <main className="container mx-auto p-6 pt-16 flex-grow transition-all duration-300 ease-in-out">
@@ -412,6 +569,132 @@ const BacklogDetails = () => {
         </div>
       </main>
       <Footer />
+
+      {/* Affichage des éléments ajoutés */}
+      {elements.map((el, index) => (
+        <div
+          key={el.id}
+          style={{
+            position: 'absolute',
+            top: el.y,
+            left: el.x,
+            backgroundColor: el.color,
+            padding: el.type === 'comment' ? '5px' : '0',
+            fontSize: el.type === 'arrow' ? `${el.size}px` : '14px',
+            color: el.textColor,
+            cursor:
+              selectedTool === 'erase' && commentMode
+                ? 'not-allowed'
+                : el.isEditing
+                ? 'text'
+                : 'pointer',
+            transform: el.type === 'arrow' ? `rotate(${el.rotation}deg)` : 'none',
+          }}
+          draggable={!el.isEditing && selectedTool !== 'erase'}
+          onDragStart={(e) => handleDragStart(el.id, e)}
+          onDoubleClick={() => handleDoubleClick(index)}
+        >
+{el.isEditing ? (
+  <input
+    type="text"
+    value={el.content}
+    onChange={(e) => handleTextChange(e, el.id)}
+    onBlur={() => handleBlur(el.id)}
+    onKeyDown={(e) => handleKeyDown(e, el.id)}
+    autoFocus
+    style={{
+      color: 'black',
+      backgroundColor: 'white',
+      borderColor: el.color === 'yellow' ? 'blue' : 'red',
+    }}
+  />
+) : (
+  el.content
+)}
+
+          {el.type === 'arrow' && (
+            <>
+              <div
+                style={{
+                  position: 'absolute',
+                  right: '-10px',
+                  top: '-10px',
+                  width: '10px',
+                  height: '10px',
+                  backgroundColor: 'blue',
+                  cursor: 'nwse-resize',
+                }}
+                onMouseDown={(e) => startResizingOrRotating('resize', index, e)}
+              ></div>
+              <div
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  top: '-20px',
+                  width: '10px',
+                  height: '10px',
+                  backgroundColor: 'green',
+                  cursor: 'grab',
+                  transform: 'translateX(-50%)',
+                }}
+                onMouseDown={(e) => startResizingOrRotating('rotate', index, e)}
+              ></div>
+            </>
+          )}
+          {selectedElement === index && !el.isEditing && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '-30px',
+                left: '0',
+                backgroundColor: 'white',
+                border: '1px solid #ccc',
+                padding: '5px',
+                borderRadius: '5px',
+                zIndex: 1000,
+              }}
+            >
+              <button
+                style={{
+                  marginRight: '5px',
+                  color: 'black',
+                }}
+                onClick={() => handleModify(el.id)}
+              >
+                Modifier
+              </button>
+              <button
+                style={{
+                  color: 'red',
+                }}
+                onClick={() => handleDelete(el.id)}
+              >
+                Supprimer
+              </button>
+            </div>
+          )}
+        </div>
+      ))}
+
+      {/* Affichage de la palette de commentaires lorsqu'elle est activée */}
+      {commentMode && (
+        <>
+          <div className="fixed inset-0 bg-transparent z-40"></div>
+
+          <CommentPalette
+            onAddComment={(color) => setSelectedTool(color)}
+            onArrowClick={() => setSelectedTool('arrow')}
+          />
+
+          <button
+            className="fixed bottom-4 right-4 bg-red-600 text-white p-4 rounded-full shadow-lg z-50"
+            onClick={toggleCommentMode}
+            style={{ pointerEvents: 'auto' }}
+          >
+            <FaTimes size={20} />
+          </button>
+        </>
+      )}
     </div>
   );
 };
