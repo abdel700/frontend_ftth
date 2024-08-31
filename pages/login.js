@@ -74,9 +74,9 @@ export default function Login() {
               Connexion
             </button>
           </form>
-          <p className="mt-6 text-center">
+          {/*<p className="mt-6 text-center">
             Vous n'avez pas de compte? <Link href="/signup" className="text-blue-500">Créer un compte</Link>
-          </p>
+          </p> */}
         </div>
       </main>
     </div>
