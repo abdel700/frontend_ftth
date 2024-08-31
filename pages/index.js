@@ -20,27 +20,10 @@ export default function IndexPage() {
           const response = await axiosInstance.get('/users/me/', {
             headers: { Authorization: `Token ${token}` },
           });
-
-          if (!response.data.is_active) {
-            setError("Votre compte n'est pas encore approuvé. Veuillez contacter l'administrateur.");
-            setTimeout(() => {
-              router.push('/login');
-            }, 3000); // Redirect after showing error message
-          } else {
-            setUser(response.data);
-          }
+          setUser(response.data);
         } catch (error) {
-          if (error.response && error.response.status === 401) {
-            // If unauthorized, redirect to login
-            router.push('/login');
-          } else {
-            // For other errors, log the error (optional) and show a message
-            console.error('Failed to fetch user data:', error);
-            setError('Failed to fetch user data.');
-            setTimeout(() => {
-              router.push('/login');
-            }, 3000); // Redirect after showing error message
-          }
+          console.error('Failed to fetch user data:', error);
+          setError('Failed to fetch user data.');
         }
       }
     };
