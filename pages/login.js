@@ -28,7 +28,11 @@ export default function Login() {
       localStorage.setItem('token', response.data.token);
       router.push('/');
     } catch (error) {
-      setError('Connexion échouée. Veuillez vérifier vos informations.');
+      if (error.response && error.response.status === 403) {
+        setError("Votre compte n'est pas encore approuvé. Veuillez contacter l'administrateur.");
+      } else {
+        setError('Connexion échouée. Veuillez vérifier vos informations.');
+      }
       console.error('Login failed:', error.response ? error.response.data : error.message);
     }
   };
