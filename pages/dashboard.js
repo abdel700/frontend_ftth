@@ -16,8 +16,12 @@ import { fetchStockData, fetchRegleDataAlternative, uploadFile } from '../servic
 import { Spinner } from '../components/Spinner';
 import { FaTimes } from 'react-icons/fa';
 import CommentPalette from '../components/CommentPalette';
+import useAuth from '../hooks/useAuth';  // Importing useAuth for authentication
 
 export default function Dashboard() {
+  // Ensure user is authenticated
+  useAuth();  // Use authentication hook
+
   // State declarations
   const [showDateFilter, setShowDateFilter] = useState(false);
   const [startDate, setStartDate] = useState(null);
@@ -31,7 +35,7 @@ export default function Dashboard() {
   const [elements, setElements] = useState([]);
   const [selectedElement, setSelectedElement] = useState(null);
   const [draggingHandle, setDraggingHandle] = useState(null);
-  
+
   // Ref declarations
   const dateFilterRef = useRef();
   const combinedOverviewRef = useRef(null);
@@ -155,8 +159,8 @@ export default function Dashboard() {
         x: e.clientX + scrollX,
         y: e.clientY + scrollY,
         content: 'Ajouter un commentaire',
-        color,  // Use the color from the selected tool
-        textColor,  // Set the text color based on the selected color
+        color,
+        textColor,
         isEditing: false,
       };
       setElements([...elements, newElement]);
@@ -345,7 +349,6 @@ export default function Dashboard() {
           const chartElement = chartRef.current.querySelector('canvas');
           if (!chartElement) return;
 
-          // Add white background to canvas before capture
           const context = chartElement.getContext('2d');
           context.save();
           context.globalCompositeOperation = 'destination-over';

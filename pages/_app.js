@@ -1,7 +1,10 @@
 import Head from 'next/head';
+import useAuth from '../hooks/useAuth';
 import '../styles/globals.css';
 
 function MyApp({ Component, pageProps }) {
+  useAuth(); // Applique la vérification d'authentification à toutes les pages
+
   return (
     <>
       <Head>

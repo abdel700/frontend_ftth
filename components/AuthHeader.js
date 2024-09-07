@@ -6,7 +6,7 @@ export default function AuthHeader() {
       <h1 className="text-xl font-bold text-white">FTTH DASHBOARD</h1>
       <div className="flex space-x-4">
         <Link href="/login" className="text-white hover:underline">Login</Link>
-      {/*  <Link href="/signup" className="text-white hover:underline">Sign Up</Link>}*/}
+        <Link href="/signup" className="text-white hover:underline">Sign Up</Link>
       </div>
     </header>
   );

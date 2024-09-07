@@ -156,8 +156,6 @@ export default function UploadPage() {
     }
   }, [emailSubject, emailDescription]);
   
-  
-
   const handleSendEmail = () => {
     openMailServicePage();
     closeModal();
