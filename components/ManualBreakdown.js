@@ -29,7 +29,7 @@ const ManualBreakdown = ({ startDate, endDate }) => {
         const response = await fetch('https://tranquil-shelf-72645-6e0212cb96fc.herokuapp.com/dashboard/api/regle/');
         const data = await response.json();
 
-        // Filtrer les données en fonction des dates si le filtre est appliqué
+        
         let filteredData = data;
         if (startDate && endDate) {
           filteredData = data.filter(row => {
@@ -70,11 +70,11 @@ const ManualBreakdown = ({ startDate, endDate }) => {
           (actorCounts['Autre'] / total) * 100,
         ];
 
-        // Afficher les noms des acteurs dans la catégorie "Autre"
+       
         const autresLabels = [...autresActeurs];
         const labels = ['DSI-EXP-Acamar', 'DSI-EXP-Acamar-Swap', 'DSI-EXP Transverse', ...autresLabels];
 
-        // Répartir les pourcentages en fonction des acteurs
+        
         const autresData = autresLabels.map(acteur => {
           return (filteredData.filter(item => item.acteur === acteur).length / total) * 100;
         });
@@ -87,7 +87,7 @@ const ManualBreakdown = ({ startDate, endDate }) => {
           return '#9966FF'; 
         });
 
-        // Remove duplicate labels and corresponding data
+        
         const uniqueLabels = [...new Set(labels)];
         const uniqueBackgroundColors = backgroundColors.slice(0, uniqueLabels.length);
         const uniquePercentages = [...percentages.slice(0, 3), ...autresData];

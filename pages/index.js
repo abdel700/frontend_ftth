@@ -4,7 +4,7 @@ import axiosInstance from '../utils/axios';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import Link from 'next/link';
-import useAuth from '../hooks/useAuth'; // Use the auth hook
+import useAuth from '../hooks/useAuth'; 
 
 export default function IndexPage() {
   useAuth(); // Add this to protect the page
@@ -13,7 +13,6 @@ export default function IndexPage() {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  // Fetch user data after authentication
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {

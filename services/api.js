@@ -71,8 +71,8 @@ export const downloadFile = async (fileId) => {
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = fileId; // You might want to set a custom file name here
-  document.body.appendChild(a); // Append anchor to body
+  a.download = fileId; 
+  document.body.appendChild(a); 
   a.click();
   a.remove();
 };

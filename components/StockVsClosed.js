@@ -17,16 +17,15 @@ const StockVsClosedGraph = ({ rule, ruleData }) => {
       {
         label: 'Nbr stock veille',
         data: reversedData.map((d) => d.nbr_stoc_veille),
-        backgroundColor: 'rgba(54, 162, 235, 0.6)', // Couleur pour le stock
-        borderColor: 'rgba(54, 162, 235, 1)', // Ajout d'un contour pour plus de netteté
-        borderWidth: 1, // Taille du contour
+        backgroundColor: 'rgba(54, 162, 235, 0.6)', 
+        borderColor: 'rgba(54, 162, 235, 1)', 
       },
       {
         label: 'Fermer hier',
         data: reversedData.map((d) => d.fermer_hier),
-        backgroundColor: 'rgba(255, 99, 132, 0.6)', // Couleur pour les fermetures
-        borderColor: 'rgba(255, 99, 132, 1)', // Ajout d'un contour pour plus de netteté
-        borderWidth: 1, // Taille du contour
+        backgroundColor: 'rgba(255, 99, 132, 0.6)', 
+        borderColor: 'rgba(255, 99, 132, 1)', 
+        borderWidth: 1, 
       },
     ],
   };
@@ -38,7 +37,7 @@ const StockVsClosedGraph = ({ rule, ruleData }) => {
         position: 'top',
       },
       title: {
-        display: false, // Supprimer le titre pour réduire l'espace
+        display: false, 
       },
     },
     scales: {

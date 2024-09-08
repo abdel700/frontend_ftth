@@ -12,7 +12,7 @@ const StatCard = ({ title, value, description, isObjective }) => {
     }
   }, [isObjective]);
 
-  // Set the fixed value for the large number
+  
   const fixedObjectiveValue = 400;
   const maxNonTreatedOrders = fixedObjectiveValue;
 
@@ -25,13 +25,13 @@ const StatCard = ({ title, value, description, isObjective }) => {
           <GaugeChart
             id="gauge-chart"
             nrOfLevels={30}
-            colors={["#00FF00", "#FFFF00", "#FF0000"]} // Gradient from green to red
+            colors={["#00FF00", "#FFFF00", "#FF0000"]} 
             arcWidth={0.3}
             percent={value / maxNonTreatedOrders}
-            textColor="#00000000" // Make the text transparent
+            textColor="#00000000" 
             needleColor="#757575"
-            style={{ width: '100%', height: '100%' }} // Responsive size
-            formatTextValue={() => ''} // Remove default text
+            style={{ width: '100%', height: '100%' }}
+            formatTextValue={() => ''} 
           />
     
           <div className="mt-4 text-center text-sm font-medium">

@@ -26,17 +26,14 @@ const CombinedOverview = ({ startDate, endDate }) => {
         const result = await fetchStockData();
         setData(result);
 
-        // Determine the date range to use
         const today = new Date();
         const defaultStartDate = new Date();
         defaultStartDate.setDate(today.getDate() - 30);
         const defaultEndDate = today;
 
-        // Use the provided dates if available, otherwise use the last 30 days
         const rangeStartDate = startDate ? new Date(startDate) : defaultStartDate;
         const rangeEndDate = endDate ? new Date(endDate) : defaultEndDate;
 
-        // Filter data based on the selected date range
         const filtered = result.filter((item) => {
           const itemDate = new Date(item.date);
           return itemDate >= rangeStartDate && itemDate <= rangeEndDate;
@@ -55,7 +52,7 @@ const CombinedOverview = ({ startDate, endDate }) => {
       {
         label: 'Backlog FTTH J',
         data: filteredData.map(item => item.stock),
-        borderColor: 'rgba(54, 162, 235, 0.6)', // Blue
+        borderColor: 'rgba(54, 162, 235, 0.6)', 
         fill: false,
         borderWidth: 1.5,
         pointRadius: 3,
@@ -63,7 +60,7 @@ const CombinedOverview = ({ startDate, endDate }) => {
       {
         label: 'Backlog FTTH J-1 (Non Traité)',
         data: filteredData.map(item => item.non_traite),
-        borderColor: 'rgba(255, 99, 132, 0.6)', // Red
+        borderColor: 'rgba(255, 99, 132, 0.6)', 
         fill: false,
         borderWidth: 1.5,
         pointRadius: 3,
@@ -71,7 +68,7 @@ const CombinedOverview = ({ startDate, endDate }) => {
       {
         label: 'Dossiers Traités',
         data: filteredData.map(item => item.traite),
-        borderColor: 'rgba(75, 192, 192, 0.6)', // Green
+        borderColor: 'rgba(75, 192, 192, 0.6)', 
         fill: false,
         borderWidth: 1.5,
         pointRadius: 3,
@@ -82,13 +79,13 @@ const CombinedOverview = ({ startDate, endDate }) => {
   const options = {
     responsive: true,
     maintainAspectRatio: false,
-    devicePixelRatio: 2, // Increases pixel density for better clarity
+    devicePixelRatio: 2, 
     elements: {
       line: {
-        tension: 0.4, // Smooth curves
+        tension: 0.4, 
       },
       point: {
-        radius: 3, // Point size
+        radius: 3, 
       },
     },
     plugins: {

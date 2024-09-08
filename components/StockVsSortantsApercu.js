@@ -60,16 +60,16 @@ const StockVsSortantsApercu = ({ startDate, endDate }) => {
             {
               label: 'Stock de la veille',
               data: stockData,
-              backgroundColor: 'rgba(54, 162, 235, 0.6)', // Couleur pour le stock
-              borderColor: 'rgba(54, 162, 235, 1)', // Ajout d'un contour pour plus de netteté
-              borderWidth: 1, // Taille du contour
+              backgroundColor: 'rgba(54, 162, 235, 0.6)', 
+              borderColor: 'rgba(54, 162, 235, 1)', 
+              borderWidth: 1, 
             },
             {
               label: 'Stock fermé hier',
               data: closedData,
-              backgroundColor: 'rgba(255, 99, 132, 0.6)', // Couleur pour les fermetures
-              borderColor: 'rgba(255, 99, 132, 1)', // Ajout d'un contour pour plus de netteté
-              borderWidth: 1, // Taille du contour
+              backgroundColor: 'rgba(255, 99, 132, 0.6)', 
+              borderColor: 'rgba(255, 99, 132, 1)', 
+              borderWidth: 1, 
             },
           ],
         });
@@ -93,8 +93,8 @@ const StockVsSortantsApercu = ({ startDate, endDate }) => {
   // Options pour le graphique
   const options = {
     responsive: true,
-    maintainAspectRatio: false, // Pour que le graphique occupe tout l'espace disponible
-    devicePixelRatio: 2, // Augmente la densité des pixels pour une meilleure qualité
+    maintainAspectRatio: false, 
+    devicePixelRatio: 2,
     plugins: {
       legend: {
         position: 'top',
@@ -109,15 +109,15 @@ const StockVsSortantsApercu = ({ startDate, endDate }) => {
         beginAtZero: true,
         ticks: {
           callback: function (value, index) {
-            return chartData.labels[index]; // Affichez la date
+            return chartData.labels[index]; 
           },
         },
       },
       y: {
         beginAtZero: true,
-        stepSize: 10, // Ajuste l'échelle des y pour plus de lisibilité
+        stepSize: 10, 
         ticks: {
-          precision: 0, // Affiche des nombres entiers
+          precision: 0,
         },
       },
     },

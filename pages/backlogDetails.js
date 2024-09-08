@@ -33,7 +33,7 @@ ChartJS.register(
 
 const BacklogDetails = () => {
   useEffect(() => {
-    document.title = "Détails du Backlog"; // Définit le titre de la page
+    document.title = "Détails du Backlog"; 
   }, []);
 
   const [startDate, setStartDate] = useState(null);
@@ -151,8 +151,8 @@ const BacklogDetails = () => {
         x: e.clientX + scrollX,
         y: e.clientY + scrollY,
         content: 'Ajouter un commentaire',
-        color,  // Use the color from the selected tool
-        textColor,  // Set the text color based on the selected color
+        color, 
+        textColor, 
         isEditing: false,
       };
       setElements([...elements, newElement]);

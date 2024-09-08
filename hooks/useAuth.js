@@ -6,7 +6,7 @@ const useAuth = () => {
   const router = useRouter();
 
   useEffect(() => {
-    const publicPages = ['/login', '/signup'];  // Définir les pages accessibles sans authentification
+    const publicPages = ['/login', '/signup']; 
     const pathIsProtected = !publicPages.includes(router.pathname);
 
     const checkAuth = async () => {
@@ -20,18 +20,18 @@ const useAuth = () => {
           });
           // Si la requête réussit, l'utilisateur reste sur la page actuelle
         } catch (error) {
-          localStorage.removeItem('token'); // Supprime le token si la requête échoue (token invalide)
+          localStorage.removeItem('token'); 
           if (pathIsProtected) {
-            router.push('/login'); // Redirige vers la page de connexion si la page est protégée
+            router.push('/login'); 
           }
         }
       }
     };
 
     checkAuth();
-  }, [router]); // Ajouter les dépendances nécessaires ici si nécessaire
+  }, [router]); 
 
-  return null; // Le hook ne retourne rien
+  return null; 
 };
 
 export default useAuth;

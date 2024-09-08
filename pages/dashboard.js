@@ -16,11 +16,10 @@ import { fetchStockData, fetchRegleDataAlternative, uploadFile } from '../servic
 import { Spinner } from '../components/Spinner';
 import { FaTimes } from 'react-icons/fa';
 import CommentPalette from '../components/CommentPalette';
-import useAuth from '../hooks/useAuth';  // Importing useAuth for authentication
+import useAuth from '../hooks/useAuth';  
 
 export default function Dashboard() {
-  // Ensure user is authenticated
-  useAuth();  // Use authentication hook
+  useAuth(); 
 
   // State declarations
   const [showDateFilter, setShowDateFilter] = useState(false);
@@ -313,7 +312,6 @@ export default function Dashboard() {
       yOffset += 10;
     }
 
-    // Add horizontal line
     doc.setDrawColor(200);
     doc.line(margin, yOffset, pageWidth - margin, yOffset);
     yOffset += 10;
@@ -337,7 +335,6 @@ export default function Dashboard() {
     doc.text(`• Dossiers Traités Aujourd'hui: ${dossiersTraitesToday}`, margin, yOffset);
     yOffset += 12;
 
-    // Add another horizontal line
     doc.setDrawColor(200);
     doc.line(margin, yOffset, pageWidth - margin, yOffset);
     yOffset += 10;
@@ -432,7 +429,7 @@ export default function Dashboard() {
         toggleCommentMode={toggleCommentMode}
         onGeneratePDF={generatePDF}
         onSaveReport={onSaveReport}
-        pageTitle="Dashboard"  // Nom de la page passée ici
+        pageTitle="Dashboard" 
       />
 
     {showDateFilter && (
@@ -550,10 +547,10 @@ export default function Dashboard() {
           position: 'absolute',
           top: el.y,
           left: el.x,
-          backgroundColor: el.color, // Set background color based on selected color
+          backgroundColor: el.color, 
           padding: el.type === 'comment' ? '5px' : '0',
           fontSize: el.type === 'arrow' ? `${el.size}px` : '14px',
-          color: el.textColor, // Set text color based on selected color
+          color: el.textColor,
           cursor:
             selectedTool === 'erase' && commentMode
               ? 'not-allowed'
@@ -575,9 +572,9 @@ export default function Dashboard() {
     onKeyDown={(e) => handleKeyDown(e, el.id)}
     autoFocus
     style={{
-      color: 'black', // Always set text color to black during modification
-      backgroundColor: 'white', // Set background color to white during modification
-      borderColor: el.color === 'yellow' ? 'blue' : 'red', // Optionally, you can customize the border color
+      color: 'black', 
+      backgroundColor: 'white', 
+      borderColor: el.color === 'yellow' ? 'blue' : 'red', 
     }}
   />
 ) : (
@@ -629,7 +626,7 @@ export default function Dashboard() {
     <button
       style={{
         marginRight: '5px',
-        color: 'black', // Ensure the Modifier button text is black
+        color: 'black', 
       }}
       onClick={() => handleModify(el.id)}
     >
@@ -637,7 +634,7 @@ export default function Dashboard() {
     </button>
     <button
       style={{
-        color: 'red', // Ensure the Supprimer button text is red
+        color: 'red',
       }}
       onClick={() => handleDelete(el.id)}
     >
@@ -655,7 +652,7 @@ export default function Dashboard() {
         <div className="fixed inset-0 bg-transparent z-40"></div>
 
         <CommentPalette
-          onAddComment={(color) => setSelectedTool(color)} // Pass color selection to handleDashboardClick
+          onAddComment={(color) => setSelectedTool(color)} 
           onArrowClick={() => setSelectedTool('arrow')}
         />
 

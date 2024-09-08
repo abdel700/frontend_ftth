@@ -39,7 +39,6 @@ const TopRules = () => {
     .sort((a, b) => b.total - a.total)
     .slice(0, 5); // Garder seulement les 5 règles avec les plus grandes valeurs
 
-  // Préparer les données pour le graphique
   const chartData = {
     labels: top5Rules.map(item => item.rule),
     datasets: [

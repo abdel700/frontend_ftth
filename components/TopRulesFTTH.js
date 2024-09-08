@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Bar } from 'react-chartjs-2';
-import { useRouter } from 'next/router'; // Importez useRouter pour la redirection
+import { useRouter } from 'next/router'; 
 import { fetchRegleData } from '../services/api';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 
@@ -8,7 +8,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
 const TopRulesFTTH = ({ startDate, endDate }) => {
   const [data, setData] = useState([]);
-  const router = useRouter(); // Initialisez useRouter
+  const router = useRouter();
 
   useEffect(() => {
     const loadData = async () => {
@@ -132,7 +132,7 @@ const TopRulesFTTH = ({ startDate, endDate }) => {
     },
     onClick: (event, elements) => {
       if (elements.length > 0) {
-        router.push('/topReglesDetails'); // Redirigez vers la page de détails
+        router.push('/topReglesDetails'); 
       }
     },
   };

@@ -43,16 +43,7 @@ h1, h2 {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  margin-bottom: 100px; /* Ajustez cette valeur pour modifier la hauteur */
-}
-
-
-/* CSS for the spinner */
-.spinner-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+  margin-bottom: 100px; 
 }
 
 .spinner {
